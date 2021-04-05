@@ -6,7 +6,7 @@ void AplicacaoTransmissora(void);
 
 void CamadaDeAplicacaoTransmissora(std::string mensagem);
 
-const int MAX_SIZE = 8;
+const int MAX_SIZE = 1;
 
 std::vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(std::bitset<8*MAX_SIZE> quadro, int size);
 std::vector<int> CamadaFisicaTransmissoraCodificacaoManchester(std::bitset<8*MAX_SIZE> quadro, int size);
