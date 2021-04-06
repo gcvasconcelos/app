@@ -54,11 +54,10 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
         quadro <<= 8;
         quadro |= mensagem[i];
     }
-    // quadro <<= (MAX_SIZE - size) * 8;
+
     cout << "\nLOGS - ENCODE Camada de Aplicação\n";
     cout << "\tMensagem: " << mensagem << "\n";
     cout << "\tQuadro: " << quadro << endl;
-
 
     CamadaFisicaTransmissora(quadro, size);
 }
@@ -165,7 +164,7 @@ vector<int> CamadaFisicaTransmissoraCodificacaoManchester(bitset<8*MAX_SIZE> qua
     }
     cout << "\tClock:\t\t" << clock << "\n";
 
-    quadro ^= clock;
+    quadro ^= clock; // XOR
 
     for (size_t i = 0; i < bits; i++) {
         if (quadro[i]) fluxoBrutoDeBits[(bits-1)-i] = 1;
@@ -176,7 +175,7 @@ vector<int> CamadaFisicaTransmissoraCodificacaoManchester(bitset<8*MAX_SIZE> qua
 
 /*
     Simula o protocolo de codificação bipolar na Camada Física da Aplicação
-    Transmissora. Cada bit 1 o tensão alternadamente vale 1 e -1e cada bit 0
+    Transmissora. Cada bit 1 o tensão alternadamente vale 1 e -1 e cada bit 0
     equivale 0 de tensão.
 
     Entrada:
@@ -214,6 +213,7 @@ vector<int> CamadaFisicaTransmissoraCodificacaoBipolar(bitset<8*MAX_SIZE> quadro
     Saída:
         fluxo bruto de bits (vector<int>) e chama a função da Camada
         Física Receptora.
+
     Exemplo:
         MeioDeComunicacao(0 1 1 0 0 0 0 1);
         >> 0 1 1 0 0 0 0 1
@@ -339,7 +339,7 @@ bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<i
     cout << "\tFluxo de bits:\t" << quadro << "\n";
     cout << "\tClock:\t\t" << clock << "\n";
 
-    quadro ^= clock;
+    quadro ^= clock; // XOR
 
     return quadro;
 }
