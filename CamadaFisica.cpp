@@ -11,6 +11,8 @@ using namespace std;
 //  usada na decodificação
 int tipoCodificacao = 0;
 
+int flagLogs = 0;
+
 /*
     Simula a Aplicação Transmissora de uma mensagem em texto e de tamanho
     limitado. A função da início ao processo de transmissão.
@@ -23,10 +25,15 @@ int tipoCodificacao = 0;
     Exemplo:
         << "qualquer mensagem"
  */
-void AplicacaoTransmissora(void) {
+void AplicacaoTransmissora(int flag) {
     string mensagem;
-    cout << "Digite uma mensagem: ";
-    cin >> mensagem;
+
+    flagLogs = flag;
+
+    cout << "\nDigite uma mensagem: ";
+    cin.ignore();
+    getline(cin, mensagem);
+
     CamadaDeAplicacaoTransmissora(mensagem);
 }
 
@@ -55,9 +62,11 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
         quadro |= mensagem[i];
     }
 
-    cout << "\nLOGS - ENCODE Camada de Aplicação\n";
-    cout << "\tMensagem: " << mensagem << "\n";
-    cout << "\tQuadro: " << quadro << endl;
+    if (flagLogs) {
+        cout << "\nLOGS - ENCODE Camada de Aplicação\n";
+        cout << "\tMensagem: " << mensagem << "\n";
+        cout << "\tQuadro: " << quadro << endl;
+    }
 
     CamadaFisicaTransmissora(quadro, size);
 }
@@ -93,9 +102,10 @@ void CamadaFisicaTransmissora(bitset<8*MAX_SIZE> quadro, int size) {
     cout << "Escolha um tipo de codificação: ";
     cin >> tipoCodificacao;
 
-    cout << "\nLOGS - ENCODE Camada Física:\n";
-    cout << "\tQuadro:\t\t" << quadro << "\n";
-
+    if (flagLogs) {
+        cout << "\nLOGS - ENCODE Camada Física:\n";
+        cout << "\tQuadro:\t\t" << quadro << "\n";
+    }
     switch (tipoCodificacao) {
         case 1:
             fluxoBrutoDeBits = CamadaFisicaTransmissoraCodificacaoBinaria(quadro, size);
@@ -110,8 +120,10 @@ void CamadaFisicaTransmissora(bitset<8*MAX_SIZE> quadro, int size) {
             cout << "Erro. Encerrando programa." << endl;
             return;
     }
-    cout << "\tFluxo de bits:  ";
-    PrintaVetor(fluxoBrutoDeBits);
+    if (flagLogs) {
+        cout << "\tFluxo de bits:  ";
+        PrintaVetor(fluxoBrutoDeBits);
+    }
     MeioDeComunicacao(fluxoBrutoDeBits);
 }
 
@@ -142,7 +154,7 @@ vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(bitset<8*MAX_SIZE> quadro
 
 /*
     Simula o protocolo de codificação Manchester na Camada Física da Aplicação
-    Transmissora. Existe um clock (começa do 0 e alterna entre 1 e 0 pelo tamanho da mensagem). Cada bit que for diferente do clock vale 1 e cada bit
+    Transmissora. Existe um clock (começa do 0 e alterna entre 1 e 0 pelo tamanho do quadro). Cada bit que for diferente do clock vale 1 e cada bit
     igual vale 0 (XOR).
 
     Entrada:
@@ -162,8 +174,9 @@ vector<int> CamadaFisicaTransmissoraCodificacaoManchester(bitset<8*MAX_SIZE> qua
     for (size_t i = 0; i < bits; i++) {
         if (i % 2 == 0) clock.set(i);
     }
-    cout << "\tClock:\t\t" << clock << "\n";
-
+    if (flagLogs) {
+        cout << "\tClock:\t\t" << clock << "\n";
+    }
     quadro ^= clock; // XOR
 
     for (size_t i = 0; i < bits; i++) {
@@ -229,11 +242,13 @@ void MeioDeComunicacao(vector<int> fluxoBrutoDeBits) {
         fluxoBrutoDeBits_destino[i] = fluxoBrutoDeBits_origem[i];
     }
 
-    cout << "\nLOGS - Meio de Comunicação:\n";
-    cout << "\tFluxo de bits enviados:\t\t";
-    PrintaVetor(fluxoBrutoDeBits_origem);
-    cout << "\tFluxo de bits recebidos:\t";
-    PrintaVetor(fluxoBrutoDeBits_destino);
+    if (flagLogs) {
+        cout << "\nLOGS - Meio de Comunicação:\n";
+        cout << "\tFluxo de bits enviados:\t\t";
+        PrintaVetor(fluxoBrutoDeBits_origem);
+        cout << "\tFluxo de bits recebidos:\t";
+        PrintaVetor(fluxoBrutoDeBits_destino);
+    }
 
     CamadaFisicaReceptora(fluxoBrutoDeBits_destino);
 }
@@ -256,10 +271,11 @@ void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits) {
     int bits = fluxoBrutoDeBits.size();
     bitset<8*MAX_SIZE> quadro;
 
-    cout << "\nLOGS - DECODE Camada Física:\n";
-    cout << "\tFluxo de bits:\t";
-    PrintaVetor(fluxoBrutoDeBits);
-
+    if (flagLogs) {
+        cout << "\nLOGS - DECODE Camada Física:\n";
+        cout << "\tFluxo de bits:\t";
+        PrintaVetor(fluxoBrutoDeBits);
+    }
     switch (tipoCodificacao) {
         case 1:
             quadro = CamadaFisicaTransmissoraDecodificacaoBinaria(fluxoBrutoDeBits);
@@ -271,8 +287,9 @@ void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits) {
             quadro = CamadaFisicaTransmissoraDecodificacaoBipolar(fluxoBrutoDeBits);
             break;
     }
-
-    cout << "\tQuadro: \t" << quadro << endl;
+    if (flagLogs) {
+        cout << "\tQuadro: \t" << quadro << endl;
+    }
     CamadaDeAplicacaoReceptora(quadro, bits);
 }
 
@@ -336,8 +353,10 @@ bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<i
         }
     }
 
-    cout << "\tFluxo de bits:\t" << quadro << "\n";
-    cout << "\tClock:\t\t" << clock << "\n";
+    if (flagLogs) {
+        cout << "\tFluxo de bits:\t" << quadro << "\n";
+        cout << "\tClock:\t\t" << clock << "\n";
+    }
 
     quadro ^= clock; // XOR
 
@@ -388,18 +407,47 @@ bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int>
  */
 void CamadaDeAplicacaoReceptora(bitset<8*MAX_SIZE> quadro, int size) {
     string mensagem = "";
-    char ch;
+    bitset<8*MAX_SIZE> ulong_kernel;
+    int num_ulongs = ceil(size/64.0);
+    int byte_idx = 0;
+    int flag = 1;
 
-    cout << "\nLOGS - DECODE Camada de Aplicação\n";
-    cout << "\tQuadro: " << quadro << "\n";
-
-    for (size_t i = 0; i < size/8; i++) {
-        ch = quadro.to_ulong() & 0xFF;
-        mensagem = ch + mensagem;
-        quadro >>= 8;
+    if (flagLogs) {
+        cout << "\nLOGS - DECODE Camada de Aplicação\n";
+        cout << "\tQuadro: " << quadro << "\n";
     }
 
-    cout << "\tMensagem: " << mensagem << endl;
+    for (size_t i = 0; i < 64; i++) ulong_kernel.set(i);
+
+    // o tamanho máximo do quadro para a conversão para caracteres é um ulong
+    // (64bits). Portanto se divide o quadro em vários ulongs.
+    for (size_t i = 0; i < num_ulongs; i++) {
+        bitset<8*MAX_SIZE> quadro_ulong;
+        quadro_ulong = quadro & ulong_kernel;
+
+        for (;byte_idx < size/8;byte_idx++) {
+            // checa se está no fim do ulong para sair do loop e garante que
+            // na volta, não caia no mesmo condicional
+            if (byte_idx % 8 == 0 && byte_idx >= 8) {
+                if (flag) {
+                    flag = 0;
+                    break;
+                } else {
+                    flag = 1;
+                }
+            }
+            char ch = quadro_ulong.to_ulong() & 0xFF;
+
+            mensagem = ch + mensagem;
+            quadro_ulong >>= 8;
+        }
+        // passa para proximo ulong do quadro
+        quadro >>= 64;
+    }
+
+    if (flagLogs) {
+        cout << "\tMensagem: " << mensagem << endl;
+    }
 
     AplicacaoReceptora(mensagem);
 }

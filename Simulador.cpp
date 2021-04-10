@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+#include <sstream>
 #include "CamadaFisica.hpp"
 
 using namespace std;
@@ -30,5 +32,15 @@ using namespace std;
         ./Simulador
 */
 int main() {
-    AplicacaoTransmissora();
+    int logsFlag = 0;
+
+    cout << "Deseja visualizar os LOGS do simulador?\n";
+    cout << "\t1 - Sim\n";
+    cout << "\t0 - Não\n";
+
+    cout << "Resposta: ";
+    cin >> logsFlag;
+
+    cout << "\nINÍCIO DA SIMULAÇÃO" << endl;
+    AplicacaoTransmissora(logsFlag);
 }

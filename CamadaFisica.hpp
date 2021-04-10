@@ -2,11 +2,11 @@
 #include <bitset>
 #include <vector>
 
-void AplicacaoTransmissora(void);
+void AplicacaoTransmissora(int flag);
 
 void CamadaDeAplicacaoTransmissora(std::string mensagem);
 
-const int MAX_SIZE = 1;
+const int MAX_SIZE = 512;
 
 std::vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(std::bitset<8*MAX_SIZE> quadro, int size);
 std::vector<int> CamadaFisicaTransmissoraCodificacaoManchester(std::bitset<8*MAX_SIZE> quadro, int size);
