@@ -1,22 +1,26 @@
 #include <iostream>
+#include <bitset>
+
 #include "CamadaEnlace.hpp"
 #include "CamadaFisica.hpp"
+#include "CamadaAplicacao.hpp"
+
+using namespace std;
+
 
 int tipoEnquadramento = 0;
 int flagLogs = 0;
 
-const int FRAME = 8*MAX_SIZE+64;
-
 void CamadaEnlaceDadosTransmissora(std::bitset<8*MAX_SIZE> quadro, int size) {
-    bitset<8*MAX_SIZE> quadroEnquadrado;
+    bitset<8*FRAME_SIZE> quadroEnquadrado;
 
     quadroEnquadrado = CamadaEnlaceDadosTransmissoraEnquadramento(quadro, size);
 
-    CamadaFisicaTransmissora(quadroEnquadrado);
+    CamadaFisicaTransmissora(quadroEnquadrado, size);
 }
 
-std::bitset<FRAME> CamadaEnlaceDadosTransmissoraEnquadramento(std::bitset<8*MAX_SIZE> quadro, int size) {
-    bitset<FRAME> quadroEnquadrado;
+std::bitset<8*FRAME_SIZE> CamadaEnlaceDadosTransmissoraEnquadramento(std::bitset<8*MAX_SIZE> quadro, int size) {
+    bitset<8*FRAME_SIZE> quadroEnquadrado;
 
     cout << "\nOpções de tipo de enquadramento na camada de enlace da Aplicação Transmissora:\n";
     cout << "\t1 - Contagem de caracteres\n";
@@ -48,26 +52,26 @@ std::bitset<FRAME> CamadaEnlaceDadosTransmissoraEnquadramento(std::bitset<8*MAX_
     return quadroEnquadrado;
 }
 
-std::bitset<FRAME> CamadaEnlaceDadosTransmissoraEnquadramentoContagemDeCaracteres(std::bitset<8*MAX_SIZE> quadro, int size) {
-    std::bitset<FRAME> quadroEnquadrado;
+std::bitset<8*FRAME_SIZE> CamadaEnlaceDadosTransmissoraEnquadramentoContagemDeCaracteres(std::bitset<8*MAX_SIZE> quadro, int size) {
+    std::bitset<8*FRAME_SIZE> quadroEnquadrado;
 
 
     // TODO
 }
 
-std::bitset<FRAME> CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(std::bitset<8*MAX_SIZE> quadro, int size) {
+std::bitset<8*FRAME_SIZE> CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(std::bitset<8*MAX_SIZE> quadro, int size) {
     // TODO
 }
 
-void CamadaEnlaceDadosReceptora(std::bitset<FRAME> quadroEnquadrado) {
+void CamadaEnlaceDadosReceptora(std::bitset<8*FRAME_SIZE> quadroEnquadrado, int size) {
     bitset<8*MAX_SIZE> quadro;
 
     quadro = CamadaEnlaceDadosReceptoraEnquadramento(quadroEnquadrado);
 
-    CamadaDeAplicacaoReceptora(quadro);
+    CamadaDeAplicacaoReceptora(quadro, size);
 }
 
-std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramento(std::bitset<FRAME> quadroEnquadrado) {
+std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramento(std::bitset<8*FRAME_SIZE> quadroEnquadrado) {
     bitset<8*MAX_SIZE> quadro;
 
     if (flagLogs) {
@@ -93,10 +97,10 @@ std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramento(std::bitset<FRAM
     return quadro;
 }
 
-std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(std::bitset<FRAME> quadroEnquadrado) {
+std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(std::bitset<8*FRAME_SIZE> quadroEnquadrado) {
     // TODO
 }
 
-std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(std::bitset<FRAME> quadroEnquadrado) {
+std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(std::bitset<8*FRAME_SIZE> quadroEnquadrado) {
     // TODO
 }
