@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+
 #include "FuncoesAuxiliares.hpp"
 
 using namespace std;
@@ -22,4 +23,33 @@ void PrintaVetor(vector<int> vetor) {
         cout << vetor[i];
     }
     cout << endl;
+}
+
+void PrintaVetorBitset(vector<bitset<PACKET_SIZE> > vetor) {
+    for (int i = 0; i < vetor.size(); i++) {
+        cout << "\t\t" << vetor[i] << "\n";
+    }
+    cout << endl;
+}
+
+void PrintaVetorBitset(vector<bitset<FRAME_SIZE> > vetor) {
+    for (int i = 0; i < vetor.size(); i++) {
+        cout << "\t\t" << vetor[i] << "\n";
+    }
+    cout << endl;
+}
+
+int TamanhoBitset(std::bitset<FRAME_SIZE> bits) {
+    int tamanho = 0;
+
+    for (size_t i = 0; i < PACKET_SIZE/8; i++) {
+        std::bitset<FRAME_SIZE> ch;
+        ch = bits.to_ulong() & 0xFF;
+        bits >>= 8;
+
+        if (ch != '\0') {
+            tamanho++;
+        }
+    }
+    return tamanho;
 }

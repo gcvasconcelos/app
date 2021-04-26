@@ -30,6 +30,7 @@
         "stdexcept": "cpp",
         "tuple": "cpp",
         "utility": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "string": "cpp"
     }
 }
