@@ -49,15 +49,15 @@ void AplicacaoTransmissora() {
  */
 void CamadaDeAplicacaoTransmissora(string mensagem) {
     vector<bitset<PACKET_SIZE> > sequenciaPacotes;
-    int flag = 1, byte_idx = 0;
+    int flag = 1, indiceByte = 0;
     int tamanho = mensagem.size();
     int numPacotes = ceil(tamanho/8.0);
 
     for (size_t i = 0; i < numPacotes; i++) {
         bitset<PACKET_SIZE> pacote;
 
-        for (; byte_idx < tamanho; byte_idx++) {
-            if (byte_idx % 8 == 0 && byte_idx >= 8) {
+        for (; indiceByte < tamanho; indiceByte++) {
+            if (indiceByte % 8 == 0 && indiceByte >= 8) {
                 if (flag) {
                     flag = 0;
                     break;
@@ -66,7 +66,7 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
                 }
             }
             pacote <<= 8;
-            pacote |= mensagem[(tamanho-1)-byte_idx];
+            pacote |= mensagem[(tamanho-1)-indiceByte];
         }
         sequenciaPacotes.push_back(pacote);
     }
@@ -98,7 +98,7 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
 //     string mensagem = "";
 //     bitset<8*MAX_SIZE> ulong_kernel;
 //     int num_ulongs = ceil(size/64.0);
-//     int byte_idx = 0;
+//     int indiceByte = 0;
 //     int flag = 1;
 
 //     if (LOG_FLAG) {
@@ -114,10 +114,10 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
     //     bitset<8*MAX_SIZE> quadro_ulong;
     //     quadro_ulong = quadro & ulong_kernel;
 
-    //     for (;byte_idx < size/8;byte_idx++) {
+    //     for (;indiceByte < size/8;indiceByte++) {
     //         // checa se está no fim do ulong para sair do loop e garante que
     //         // na volta, não caia no mesmo condicional
-    //         if (byte_idx % 8 == 0 && byte_idx >= 8) {
+    //         if (indiceByte % 8 == 0 && indiceByte >= 8) {
     //             if (flag) {
     //                 flag = 0;
     //                 break;

@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "CamadaAplicacao.hpp"
+#include "CamadaEnlace.hpp"
 #include "CamadaFisica.hpp"
 #include "FuncoesAuxiliares.hpp"
 
@@ -220,8 +221,6 @@ void CamadaFisicaReceptora(vector<int> fluxoBrutoDeBits) {
         PrintaVetor(fluxoBrutoDeBits);
     }
 
-    // cout << "\nDEBUG: " << numQuadros << "\n";
-
     switch (tipoCodificacao) {
         case 1:
             fluxoBrutoDeBitsDecodificado = CamadaFisicaTransmissoraDecodificacaoBinaria(fluxoBrutoDeBits);
@@ -238,7 +237,7 @@ void CamadaFisicaReceptora(vector<int> fluxoBrutoDeBits) {
         cout << "\tFluxo de bits decodificado:\n\t\t";
         PrintaVetor(fluxoBrutoDeBitsDecodificado);
     }
-    // CamadaDeAplicacaoReceptora(quadro, bits);
+    CamadaEnlaceDadosReceptora(fluxoBrutoDeBitsDecodificado);
 }
 
 
@@ -256,8 +255,8 @@ void CamadaFisicaReceptora(vector<int> fluxoBrutoDeBits) {
         >> 01100001
  */
 vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(vector<int> fluxoBrutoDeBits) {
-    vector<int> fluxoBrutoDeBitsDecodificado;
     int numBits = fluxoBrutoDeBits.size();
+    vector<int> fluxoBrutoDeBitsDecodificado;
 
     for (size_t i = 0; i < numBits; i++) {
         fluxoBrutoDeBitsDecodificado.push_back(fluxoBrutoDeBits.back());
@@ -282,9 +281,9 @@ vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(vector<int> fluxoBrutoD
         >> 01100001
  */
 vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> fluxoBrutoDeBits) {
-    vector<int> clock;
-    vector<int> fluxoBrutoDeBitsDecodificado;
     int numBits = fluxoBrutoDeBits.size();
+    vector<int> fluxoBrutoDeBitsDecodificado;
+    vector<int> clock;
 
     for (size_t i = 0; i < numBits; i++) {
         int bit = (i % 2 == 0) ? 1 : 0;
@@ -318,8 +317,8 @@ vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> fluxoBru
         >> 01100001
  */
 vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(vector<int> fluxoBrutoDeBits) {
-    vector<int> fluxoBrutoDeBitsDecodificado;
     int numBits = fluxoBrutoDeBits.size();
+    vector<int> fluxoBrutoDeBitsDecodificado;
 
     for (size_t i = 0; i < numBits; i++) {
         fluxoBrutoDeBitsDecodificado.push_back(abs(fluxoBrutoDeBits.back()));

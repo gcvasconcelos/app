@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include "CamadaEnlace.hpp"
 #include "CamadaFisica.hpp"
@@ -96,44 +97,64 @@ vector<bitset<FRAME_SIZE>>  CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDe
     return sequenciaQuadrosEnquadrados;
 }
 
-// void CamadaEnlaceDadosReceptora(std::bitset<8*FRAME_SIZE> quadroEnquadrado, int size) {
-//     bitset<8*MAX_SIZE> quadro;
+void CamadaEnlaceDadosReceptora(vector<int> fluxoBrutoDeBits) {
+    vector<bitset<FRAME_SIZE>> sequenciaQuadros;
 
-//     quadro = CamadaEnlaceDadosReceptoraEnquadramento(quadroEnquadrado);
+    CamadaEnlaceDadosReceptoraEnquadramento(fluxoBrutoDeBits, sequenciaQuadros);
 
-//     CamadaDeAplicacaoReceptora(quadro, size);
-// }
+    // CamadaDeAplicacaoReceptora(quadro, size);
+}
 
-// std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramento(std::bitset<8*FRAME_SIZE> quadroEnquadrado) {
-//     bitset<8*MAX_SIZE> quadro;
+void CamadaEnlaceDadosReceptoraEnquadramento(vector<int> fluxoBrutoDeBits, vector<bitset<FRAME_SIZE>> &sequenciaQuadros) {
+    if (LOG_FLAG) {
+        cout << "\nLOGS - DECODE Camada de Enlace:\n";
+        cout << "\tFluxo de bits:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBits);
+    }
+    switch (tipoEnquadramento) {
+        case 1:
+            sequenciaQuadros = CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(fluxoBrutoDeBits);
+            break;
+        case 2:
+            // quadro = CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(quadroEnquadrado);
+            break;
+        default:
+            cout << "Erro na Camada de Enlace. Encerrando programa." << endl;
+            return;
+    }
 
-//     if (LOG_FLAG) {
-//         cout << "\nLOGS - DECODE Camada de Enlace:\n";
-//         cout << "\tQuadro Enquadrado:\t" << quadroEnquadrado << "\n";
-//     }
-//     switch (tipoEnquadramento) {
-//         case 1:
-//             quadro = CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(quadroEnquadrado);
-//             break;
-//         case 2:
-//             quadro = CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(quadroEnquadrado);
-//             break;
-//         default:
-//             cout << "Erro na Camada de Enlace. Encerrando programa." << endl;
-//             return;
-//     }
+    if (LOG_FLAG) {
+        cout << "\tQuadros:\n" ;
+        PrintaVetorBitset(sequenciaQuadros);
+    }
+}
 
-//     if (LOG_FLAG) {
-//         cout << "\tQuadro:\t\t" << quadro << endl;
-//     }
+vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(vector<int> fluxoBrutoDeBits) {
+    vector<bitset<FRAME_SIZE>> sequenciaQuadros;
+    int numQuadros = ceil((fluxoBrutoDeBits.size()/8)/9.0);
 
-//     return quadro;
-// }
 
-// std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(std::bitset<8*FRAME_SIZE> quadroEnquadrado) {
-//     // TODO
-// }
+    for (size_t i = 0; i < numQuadros; i++) {
+        bitset<FRAME_SIZE> quadro(0);
+        bitset<8> tamanhoQuadro(0);
 
-// std::bitset<8*MAX_SIZE> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(std::bitset<8*FRAME_SIZE> quadroEnquadrado) {
-//     // TODO
+        for (size_t j = 0; j < 8; j++) {
+            if (fluxoBrutoDeBits.back()) tamanhoQuadro.set(j);
+            fluxoBrutoDeBits.pop_back();
+        }
+        for (size_t j = 0; j < tamanhoQuadro.to_ulong()*8; j++) {
+            if (fluxoBrutoDeBits.back()) quadro.set(j);
+            fluxoBrutoDeBits.pop_back();
+        }
+        quadro <<= 8;
+        quadro |= tamanhoQuadro.to_ulong();
+
+        sequenciaQuadros.push_back(quadro);
+    }
+
+    return sequenciaQuadros;
+}
+
+// vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(vector<int> fluxoBrutoDeBits) {
+// //     // TODO
 // }
