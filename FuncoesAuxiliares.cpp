@@ -61,3 +61,19 @@ int ContaTamanhoQuadro(std::bitset<FRAME_SIZE> quadro) {
 
     return tamanho;
 }
+
+int ContaTamanhoPacote(std::bitset<PACKET_SIZE> pacote) {
+    int tamanho = 0;
+
+    for (size_t j = 0; j < PACKET_SIZE/8; j++) {
+        std::bitset<FRAME_SIZE> ch;
+        ch = pacote.to_ulong() & 0xFF;
+        pacote >>= 8;
+
+        if (ch != '\0') {
+            tamanho++;
+        }
+    }
+
+    return tamanho;
+}

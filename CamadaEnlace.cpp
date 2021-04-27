@@ -50,7 +50,7 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosTransmissoraEnquadramento(vector<bit
             sequenciaQuadrosEnquadrados = CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(sequenciaQuadros);
             break;
         default:
-            cout << "Erro na Camada de Enlace. Encerrando programa." << endl;
+            cout << "Erro na Camada de Enlace: tipo de codificação não suportado. Encerrando programa." << endl;
     }
 
     if (LOG_FLAG) {
@@ -102,7 +102,7 @@ void CamadaEnlaceDadosReceptora(vector<int> fluxoBrutoDeBits) {
 
     CamadaEnlaceDadosReceptoraEnquadramento(fluxoBrutoDeBits, sequenciaQuadros);
 
-    // CamadaDeAplicacaoReceptora(quadro, size);
+    CamadaDeAplicacaoReceptora(sequenciaQuadros);
 }
 
 void CamadaEnlaceDadosReceptoraEnquadramento(vector<int> fluxoBrutoDeBits, vector<bitset<FRAME_SIZE>> &sequenciaQuadros) {
@@ -116,7 +116,7 @@ void CamadaEnlaceDadosReceptoraEnquadramento(vector<int> fluxoBrutoDeBits, vecto
             sequenciaQuadros = CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(fluxoBrutoDeBits);
             break;
         case 2:
-            // quadro = CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(quadroEnquadrado);
+            sequenciaQuadros = CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(fluxoBrutoDeBits);
             break;
         default:
             cout << "Erro na Camada de Enlace. Encerrando programa." << endl;
@@ -124,7 +124,7 @@ void CamadaEnlaceDadosReceptoraEnquadramento(vector<int> fluxoBrutoDeBits, vecto
     }
 
     if (LOG_FLAG) {
-        cout << "\tQuadros:\n" ;
+        cout << "\tQuadros Desenquadrados:\n" ;
         PrintaVetorBitset(sequenciaQuadros);
     }
 }
@@ -133,21 +133,24 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCara
     vector<bitset<FRAME_SIZE>> sequenciaQuadros;
     int numQuadros = ceil((fluxoBrutoDeBits.size()/8)/9.0);
 
-
     for (size_t i = 0; i < numQuadros; i++) {
         bitset<FRAME_SIZE> quadro(0);
         bitset<8> tamanhoQuadro(0);
 
+        // busca tamamnho do quadro no primeiro byte enviado
         for (size_t j = 0; j < 8; j++) {
             if (fluxoBrutoDeBits.back()) tamanhoQuadro.set(j);
             fluxoBrutoDeBits.pop_back();
         }
+
+        // preenche o quadro com as informações dos próximos bytes enviados
         for (size_t j = 0; j < tamanhoQuadro.to_ulong()*8; j++) {
             if (fluxoBrutoDeBits.back()) quadro.set(j);
             fluxoBrutoDeBits.pop_back();
         }
-        quadro <<= 8;
-        quadro |= tamanhoQuadro.to_ulong();
+
+        // quadro <<= 8;
+        // quadro |= tamanhoQuadro.to_ulong();
 
         sequenciaQuadros.push_back(quadro);
     }
@@ -155,6 +158,48 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCara
     return sequenciaQuadros;
 }
 
-// vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(vector<int> fluxoBrutoDeBits) {
-// //     // TODO
-// }
+vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(vector<int> fluxoBrutoDeBits) {
+    vector<bitset<FRAME_SIZE>> sequenciaQuadros;
+    float tamanhoQuadro = 10.0;
+    int numQuadros = ceil((fluxoBrutoDeBits.size()/8)/tamanhoQuadro);
+
+    for (size_t i = 0; i < numQuadros; i++) {
+        bitset<FRAME_SIZE> quadro(0);
+        bitset<8> byte(0);
+        int indiceQuadro = 0;
+        int flagQuadro = 0, flagByte = 1;
+
+        do {
+            byte.reset();
+
+            // busca primeiro byte, que deve ser o marcador "\0"
+            for (size_t j = 0; j < 8; j++) {
+                if (fluxoBrutoDeBits.back()) byte.set(j);
+                fluxoBrutoDeBits.pop_back();
+            }
+
+            // checa se o byte atual é primeiro ou último marcador "\0" para controlar a repetição
+            if (byte.to_ulong() == 0b00011011) {
+                flagQuadro = (flagQuadro) ? 0 : 1;
+            } else {
+                // preenche o byte no quadro
+                for (size_t j = 0; indiceQuadro < tamanhoQuadro*8; indiceQuadro++, j++) {
+                    if (indiceQuadro % 8 == 0 && indiceQuadro >= 8) {
+                        if (flagByte) {
+                            flagByte = 0;
+                            break;
+                        } else {
+                            flagByte = 1;
+                        }
+                    }
+                    quadro[indiceQuadro] = byte[j];
+                }
+            }
+
+        } while (flagQuadro);
+
+        sequenciaQuadros.push_back(quadro);
+    }
+
+    return sequenciaQuadros;
+}

@@ -65,7 +65,7 @@ void CamadaFisicaTransmissora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
                 CamadaFisicaTransmissoraCodificacaoBipolar(quadro, fluxoBrutoDeBits);
                 break;
             default:
-                cout << "Erro na Camada Física. Encerrando programa." << endl;
+                cout << "Erro na Camada Física: tipo de codificação não suportado. Encerrando programa." << endl;
                 return;
         }
     }

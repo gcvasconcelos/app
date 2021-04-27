@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 #include <cmath>
 
 #include "CamadaAplicacao.hpp"
@@ -48,16 +47,16 @@ void AplicacaoTransmissora() {
         >> 0110110101100101011011100111001101100001011001110110010101101101
  */
 void CamadaDeAplicacaoTransmissora(string mensagem) {
-    vector<bitset<PACKET_SIZE> > sequenciaPacotes;
-    int flag = 1, indiceByte = 0;
+    vector<bitset<PACKET_SIZE>> sequenciaPacotes;
+    int flag = 1, indicePacote = 0;
     int tamanho = mensagem.size();
     int numPacotes = ceil(tamanho/8.0);
 
     for (size_t i = 0; i < numPacotes; i++) {
         bitset<PACKET_SIZE> pacote;
 
-        for (; indiceByte < tamanho; indiceByte++) {
-            if (indiceByte % 8 == 0 && indiceByte >= 8) {
+        for (; indicePacote < tamanho; indicePacote++) {
+            if (indicePacote % 8 == 0 && indicePacote >= 8) {
                 if (flag) {
                     flag = 0;
                     break;
@@ -66,7 +65,7 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
                 }
             }
             pacote <<= 8;
-            pacote |= mensagem[(tamanho-1)-indiceByte];
+            pacote |= mensagem[(tamanho-1)-indicePacote];
         }
         sequenciaPacotes.push_back(pacote);
     }
@@ -81,78 +80,82 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
     CamadaEnlaceDadosTransmissora(sequenciaPacotes);
 }
 
-// /*
-//     Simula a Camada de Aplicação da Aplicação Receptora. A função processa o
-//     quadro e o converte na mensagem em texto recebida.
+/*
+    Simula a Camada de Aplicação da Aplicação Receptora. A função processa o
+    quadro e o converte na mensagem em texto recebida.
 
-//     Entrada:
-//         quadro (bitset).
-//     Saída:
-//         string da mensagem e chama a função da Aplicacao Receptora.
+    Entrada:
+        quadro (bitset).
+    Saída:
+        string da mensagem e chama a função da Aplicacao Receptora.
 
-//     Exemplo:
-//         CamadaDeAplicacaoReceptora(01100001);
-//         >> "a"
-//  */
-// void CamadaDeAplicacaoReceptora(bitset<8*MAX_SIZE> quadro, int size) {
-//     string mensagem = "";
-//     bitset<8*MAX_SIZE> ulong_kernel;
-//     int num_ulongs = ceil(size/64.0);
-//     int indiceByte = 0;
-//     int flag = 1;
+    Exemplo:
+        CamadaDeAplicacaoReceptora(01100001);
+        >> "a"
+ */
+void CamadaDeAplicacaoReceptora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
+    int numQuadros = sequenciaQuadros.size();
+    vector<bitset<PACKET_SIZE>> sequenciaPacotes;
 
-//     if (LOG_FLAG) {
-//         cout << "\nLOGS - DECODE Camada de Aplicação\n";
-//         cout << "\tQuadro: " << quadro << "\n";
-//     }
+    if (LOG_FLAG) {
+        cout << "\nLOGS - DECODE Camada de Aplicação\n";
+        cout << "\tQuadros:\n" ;
+        PrintaVetorBitset(sequenciaQuadros);
+    }
 
-//     for (size_t i = 0; i < 64; i++) ulong_kernel.set(i);
+    for (size_t i = 0; i < numQuadros; i++) {
+        bitset<PACKET_SIZE> pacote;
 
-//     // o tamanho máximo do quadro para a conversão para caracteres é um ulong
-//     // (64bits). Portanto se divide o quadro em vários ulongs.
-    // for (size_t i = 0; i < num_ulongs; i++) {
-    //     bitset<8*MAX_SIZE> quadro_ulong;
-    //     quadro_ulong = quadro & ulong_kernel;
+        pacote = sequenciaQuadros[i].to_ulong();
 
-    //     for (;indiceByte < size/8;indiceByte++) {
-    //         // checa se está no fim do ulong para sair do loop e garante que
-    //         // na volta, não caia no mesmo condicional
-    //         if (indiceByte % 8 == 0 && indiceByte >= 8) {
-    //             if (flag) {
-    //                 flag = 0;
-    //                 break;
-    //             } else {
-    //                 flag = 1;
-    //             }
-    //         }
-    //         char ch = quadro_ulong.to_ulong() & 0xFF;
+        sequenciaPacotes.push_back(pacote);
+    }
 
-    //         mensagem = ch + mensagem;
-    //         quadro_ulong >>= 8;
-    //     }
-    //     // passa para proximo ulong do quadro
-    //     quadro >>= 64;
-    // }
+    if (LOG_FLAG) {
+        cout << "\tPacotes:\n" ;
+        PrintaVetorBitset(sequenciaPacotes);
+    }
 
-//     if (LOG_FLAG) {
-//         cout << "\tMensagem: " << mensagem << endl;
-//     }
+    AplicacaoReceptora(sequenciaPacotes);
+}
 
-//     AplicacaoReceptora(mensagem);
-// }
+/*
+    Simula a Aplicação Receptora de uma mensagem.
 
-// /*
-//     Simula a Aplicação Receptora de uma mensagem.
+    Entrada:
+        string da mensagem.
+    Saída:
+        printa a mensagem recebida e encerra a simulação.
 
-//     Entrada:
-//         string da mensagem.
-//     Saída:
-//         printa a mensagem recebida e encerra a simulação.
+    Exemplo:
+        AplicacaoReceptora("mensagem");
+        >> Mensagem recebida: mensagem
+ */
+void AplicacaoReceptora(vector<bitset<PACKET_SIZE>> sequenciaPacotes) {
+    string mensagem = "";
+    int numPacotes = sequenciaPacotes.size();
+    int indiceByte = 0, flagByte = 1;
 
-//     Exemplo:
-//         AplicacaoReceptora("mensagem");
-//         >> Mensagem recebida: mensagem
-//  */
-// void AplicacaoReceptora(string mensagem) {
-//     cout << "\nMensagem recebida: " << mensagem << endl;
-// }
+    for (size_t i = 0; i < numPacotes; i++) {
+        bitset<PACKET_SIZE> pacote = sequenciaPacotes[(numPacotes-1)-i];
+
+        int tamanhoPacote = ContaTamanhoPacote(pacote);
+
+        for (; indiceByte < PACKET_SIZE*8; indiceByte++) {
+            if (indiceByte % 8 == 0 && indiceByte >= 8) {
+                if (flagByte) {
+                    flagByte = 0;
+                    break;
+                } else {
+                    flagByte = 1;
+                }
+            }
+            char ch = pacote.to_ulong() & 0xFF;
+            pacote >>= 8;
+
+            mensagem = mensagem + ch;
+        }
+    }
+
+    cout << "\nMensagem recebida:\n\t\t" << mensagem << endl;
+}
