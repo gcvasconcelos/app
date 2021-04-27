@@ -25,31 +25,39 @@ void PrintaVetor(vector<int> vetor) {
     cout << endl;
 }
 
-void PrintaVetorBitset(vector<bitset<PACKET_SIZE> > vetor) {
+void PrintaVetorBitset(vector<bitset<PACKET_SIZE>> vetor) {
     for (int i = 0; i < vetor.size(); i++) {
         cout << "\t\t" << vetor[i] << "\n";
     }
-    cout << endl;
 }
 
-void PrintaVetorBitset(vector<bitset<FRAME_SIZE> > vetor) {
+void PrintaVetorBitset(vector<bitset<FRAME_SIZE>> vetor) {
     for (int i = 0; i < vetor.size(); i++) {
         cout << "\t\t" << vetor[i] << "\n";
     }
-    cout << endl;
 }
 
-int TamanhoBitset(std::bitset<FRAME_SIZE> bits) {
+int ContaTamanhoQuadro(std::bitset<FRAME_SIZE> quadro) {
     int tamanho = 0;
+    bitset<FRAME_SIZE> ulong_kernel;
 
-    for (size_t i = 0; i < PACKET_SIZE/8; i++) {
-        std::bitset<FRAME_SIZE> ch;
-        ch = bits.to_ulong() & 0xFF;
-        bits >>= 8;
+    for (size_t i = 0; i < PACKET_SIZE; i++) ulong_kernel.set(i);
 
-        if (ch != '\0') {
-            tamanho++;
+    for (size_t i = 0; i < FRAME_SIZE/PACKET_SIZE; i++) {
+        bitset<FRAME_SIZE> quadro_ulong;
+        quadro_ulong = quadro & ulong_kernel;
+
+        for (size_t j = 0; j < PACKET_SIZE/8; j++) {
+            std::bitset<FRAME_SIZE> ch;
+            ch = quadro_ulong.to_ulong() & 0xFF;
+            quadro_ulong >>= 8;
+
+            if (ch != '\0') {
+                tamanho++;
+            }
         }
+        quadro >>= PACKET_SIZE;
     }
+
     return tamanho;
 }

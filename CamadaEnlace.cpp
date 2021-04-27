@@ -9,8 +9,8 @@ using namespace std;
 
 int tipoEnquadramento = 0;
 
-void CamadaEnlaceDadosTransmissora(vector<bitset<PACKET_SIZE> > sequenciaPacotes) {
-    vector<bitset<FRAME_SIZE> > sequenciaQuadros;
+void CamadaEnlaceDadosTransmissora(vector<bitset<PACKET_SIZE>> sequenciaPacotes) {
+    vector<bitset<FRAME_SIZE>> sequenciaQuadros;
 
     for (size_t i = 0; i < sequenciaPacotes.size(); i++){
         bitset<FRAME_SIZE> quadro;
@@ -20,11 +20,13 @@ void CamadaEnlaceDadosTransmissora(vector<bitset<PACKET_SIZE> > sequenciaPacotes
 
     sequenciaQuadros = CamadaEnlaceDadosTransmissoraEnquadramento(sequenciaQuadros);
 
-    // CamadaFisicaTransmissora(quadroEnquadrado, size);
+    // detecção de erros
+
+    CamadaFisicaTransmissora(sequenciaQuadros);
 }
 
-vector<bitset<FRAME_SIZE> > CamadaEnlaceDadosTransmissoraEnquadramento(vector<bitset<FRAME_SIZE> > sequenciaQuadros) {
-    vector<bitset<FRAME_SIZE> > sequenciaQuadrosEnquadrados;
+vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosTransmissoraEnquadramento(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
+    vector<bitset<FRAME_SIZE>> sequenciaQuadrosEnquadrados;
 
     cout << "\nOpções de tipo de enquadramento na camada de enlace da Aplicação Transmissora:\n";
     cout << "\t1 - Contagem de caracteres\n";
@@ -38,6 +40,7 @@ vector<bitset<FRAME_SIZE> > CamadaEnlaceDadosTransmissoraEnquadramento(vector<bi
         cout << "\tQuadros:\n" ;
         PrintaVetorBitset(sequenciaQuadros);
     }
+
     switch (tipoEnquadramento) {
         case 1:
             sequenciaQuadrosEnquadrados = CamadaEnlaceDadosTransmissoraEnquadramentoContagemDeCaracteres(sequenciaQuadros);
@@ -57,30 +60,30 @@ vector<bitset<FRAME_SIZE> > CamadaEnlaceDadosTransmissoraEnquadramento(vector<bi
     return sequenciaQuadrosEnquadrados;
 }
 
-vector<bitset<FRAME_SIZE> >  CamadaEnlaceDadosTransmissoraEnquadramentoContagemDeCaracteres(vector<bitset<FRAME_SIZE> > sequenciaQuadros) {
-    vector<bitset<FRAME_SIZE> > sequenciaQuadrosEnquadrados;
+vector<bitset<FRAME_SIZE>>  CamadaEnlaceDadosTransmissoraEnquadramentoContagemDeCaracteres(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
+    vector<bitset<FRAME_SIZE>> sequenciaQuadrosEnquadrados;
     int numQuadros = sequenciaQuadros.size();
 
     for (size_t i = 0; i < numQuadros; i++) {
         bitset<FRAME_SIZE> quadroEnquadrado;
-        int tamanhoQuadro = TamanhoBitset(sequenciaQuadros[i]);
+        int tamanhoQuadro = ContaTamanhoQuadro(sequenciaQuadros[i]);
 
-        quadroEnquadrado |= tamanhoQuadro;
-        quadroEnquadrado <<= 64;
         quadroEnquadrado |= sequenciaQuadros[i];
+        quadroEnquadrado <<= 8;
+        quadroEnquadrado |= tamanhoQuadro;
 
         sequenciaQuadrosEnquadrados.push_back(quadroEnquadrado);
     }
     return sequenciaQuadrosEnquadrados;
 }
 
-vector<bitset<FRAME_SIZE> >  CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(vector<bitset<FRAME_SIZE> > sequenciaQuadros) {
-    vector<bitset<FRAME_SIZE> > sequenciaQuadrosEnquadrados;
+vector<bitset<FRAME_SIZE>>  CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
+    vector<bitset<FRAME_SIZE>> sequenciaQuadrosEnquadrados;
     int numQuadros = sequenciaQuadros.size();
 
     for (size_t i = 0; i < numQuadros; i++) {
         bitset<FRAME_SIZE> quadroEnquadrado;
-        int tamanhoQuadro = TamanhoBitset(sequenciaQuadros[i]);
+        int tamanhoQuadro = ContaTamanhoQuadro(sequenciaQuadros[i]);
 
         quadroEnquadrado |= 0b00011011; // ESC
         quadroEnquadrado <<= tamanhoQuadro*8;

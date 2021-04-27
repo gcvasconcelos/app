@@ -3,16 +3,16 @@
 
 #include "Constantes.hpp"
 
-// void CamadaFisicaTransmissora(std::vector<std::bitset<FRAME_SIZE> > quadro, int size);
+void CamadaFisicaTransmissora(std::vector<std::bitset<FRAME_SIZE>> sequenciaQuadros);
 
-// std::vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(std::bitset<8*MAX_SIZE> quadro, int size);
-// std::vector<int> CamadaFisicaTransmissoraCodificacaoManchester(std::bitset<8*MAX_SIZE> quadro, int size);
-// std::vector<int> CamadaFisicaTransmissoraCodificacaoBipolar(std::bitset<8*MAX_SIZE> quadro, int size);
+void CamadaFisicaTransmissoraCodificacaoBinaria(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
+void CamadaFisicaTransmissoraCodificacaoManchester(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
+void CamadaFisicaTransmissoraCodificacaoBipolar(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
 
-// void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits);
+void MeioDeComunicacao(std::vector<int> fluxoBrutoDeBits);
 
-// std::bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> fluxoBrutoDeBits);
-// std::bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> fluxoBrutoDeBits);
-// std::bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> fluxoBrutoDeBits);
+void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits);
 
-// void MeioDeComunicacao(std::vector<int> fluxoBrutoDeBits);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> fluxoBrutoDeBits);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> fluxoBrutoDeBits);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> fluxoBrutoDeBits);

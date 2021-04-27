@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cmath>
-#include <bitset>
-#include <vector>
+
 #include "CamadaAplicacao.hpp"
 #include "CamadaFisica.hpp"
 #include "FuncoesAuxiliares.hpp"
@@ -11,6 +10,7 @@ using namespace std;
 //  Variável global para receber codificação selecionada pelo usuário e ser
 //  usada na decodificação
 int tipoCodificacao = 0;
+int numQuadros = 0;
 
 /*
     Simula a Camada Física da Aplicação Transmissora. A função processa o
@@ -32,303 +32,299 @@ int tipoCodificacao = 0;
         << 1
         >> 0 1 1 0 0 0 0 1
  */
-// void CamadaFisicaTransmissora(bitset<8*FRAME_SIZE> quadro, int size) {
-//     vector<int> fluxoBrutoDeBits(size*8);
+void CamadaFisicaTransmissora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
+    vector<int> fluxoBrutoDeBits;
+    numQuadros = sequenciaQuadros.size();
 
-//     cout << "\nOpções de codificação na camada física da Aplicação Transmissora:\n";
-//     cout << "\t1 - Codificação binária (NRZ unipolar)\n";
-//     cout << "\t2 - Codificação Manchester\n";
-//     cout << "\t3 - Codificação Bipolar\n";
+    cout << "\nOpções de codificação na camada física da Aplicação Transmissora:\n";
+    cout << "\t1 - Codificação binária (NRZ unipolar)\n";
+    cout << "\t2 - Codificação Manchester\n";
+    cout << "\t3 - Codificação Bipolar\n";
 
-//     cout << "Escolha um tipo de codificação: ";
-//     cin >> tipoCodificacao;
+    cout << "Escolha um tipo de codificação: ";
+    cin >> tipoCodificacao;
 
-//     if (LOG_FLAG) {
-//         cout << "\nLOGS - ENCODE Camada Física:\n";
-//         cout << "\tQuadro:\t\t" << quadro << "\n";
-//     }
-//     switch (tipoCodificacao) {
-//         case 1:
-//             fluxoBrutoDeBits = CamadaFisicaTransmissoraCodificacaoBinaria(quadro, size);
-//             break;
-//         case 2:
-//             fluxoBrutoDeBits = CamadaFisicaTransmissoraCodificacaoManchester(quadro, size);
-//             break;
-//         case 3:
-//             fluxoBrutoDeBits = CamadaFisicaTransmissoraCodificacaoBipolar(quadro, size);
-//             break;
-//         default:
-//             cout << "Erro. Encerrando programa." << endl;
-//             return;
-//     }
-//     if (LOG_FLAG) {
-//         cout << "\tFluxo de bits:  ";
-//         PrintaVetor(fluxoBrutoDeBits);
-//     }
-//     MeioDeComunicacao(fluxoBrutoDeBits);
-// }
+    if (LOG_FLAG) {
+        cout << "\nLOGS - ENCODE Camada Física:\n";
+        cout << "\tQuadros:\n" ;
+        PrintaVetorBitset(sequenciaQuadros);
+    }
+    for (size_t i = 0; i < numQuadros; i++) {
+        bitset<FRAME_SIZE> quadro;
+        quadro = sequenciaQuadros[i];
 
-// /*
-//     Simula o protocolo de codificação binária NRZ (Non Return Zero) na Camada
-//     Física da Aplicação Transmissora. Cada bit 1 equivale ao valor 1 de tensão
-//     e cada bit 0 equivale ao valor 0 de tensão.
+        switch (tipoCodificacao) {
+            case 1:
+                CamadaFisicaTransmissoraCodificacaoBinaria(quadro, fluxoBrutoDeBits);
+                break;
+            case 2:
+                CamadaFisicaTransmissoraCodificacaoManchester(quadro, fluxoBrutoDeBits);
+                break;
+            case 3:
+                CamadaFisicaTransmissoraCodificacaoBipolar(quadro, fluxoBrutoDeBits);
+                break;
+            default:
+                cout << "Erro na Camada Física. Encerrando programa." << endl;
+                return;
+        }
+    }
 
-//     Entrada:
-//         quadro (bitset).
-//     Saída:
-//         fluxo bruto de bits (vector<int>).
+    if (LOG_FLAG) {
+        cout << "\tFluxo de bits:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBits);
+    }
+    MeioDeComunicacao(fluxoBrutoDeBits);
+}
 
-//     Exemplo:
-//         CamadaFisicaTransmissoraCodificacaoBinaria(01100001);
-//         >> 0 1 1 0 0 0 0 1
-//  */
-// vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(bitset<8*MAX_SIZE> quadro, int size) {
-//     int bits = size*8;
-//     vector<int> fluxoBrutoDeBits(bits, 0);
+/*
+    Simula o protocolo de codificação binária NRZ (Non Return Zero) na Camada
+    Física da Aplicação Transmissora. Cada bit 1 equivale ao valor 1 de tensão
+    e cada bit 0 equivale ao valor 0 de tensão.
 
-//     for (size_t i = 0; i < bits; i++) {
-//         if (quadro[i]) fluxoBrutoDeBits[(bits-1)-i] = 1;
-//     }
+    Entrada:
+        quadro (bitset).
+    Saída:
+        fluxo bruto de bits (vector<int>).
 
-//     return fluxoBrutoDeBits;
-// }
+    Exemplo:
+        CamadaFisicaTransmissoraCodificacaoBinaria(01100001);
+        >> 0 1 1 0 0 0 0 1
+ */
+void CamadaFisicaTransmissoraCodificacaoBinaria(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
+    int numBits = ContaTamanhoQuadro(quadro)*8;
 
-// /*
-//     Simula o protocolo de codificação Manchester na Camada Física da Aplicação
-//     Transmissora. Existe um clock (começa do 0 e alterna entre 1 e 0 pelo tamanho do quadro). Cada bit que for diferente do clock vale 1 e cada bit
-//     igual vale 0 (XOR).
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (quadro[i]) ? 1 : 0;
+        fluxoBrutoDeBits.push_back(bit);
+    }
+    return;
+}
 
-//     Entrada:
-//         quadro (bitset).
-//     Saída:
-//         fluxo bruto de bits (vector<int>).
+/*
+    Simula o protocolo de codificação Manchester na Camada Física da Aplicação
+    Transmissora. Existe um clock (começa do 0 e alterna entre 1 e 0 pelo tamanho do quadro). Cada bit que for diferente do clock vale 1 e cada bit
+    igual vale 0 (XOR).
 
-//     Exemplo:
-//         CamadaFisicaTransmissoraCodificacaoManchester(01100001);
-//         >> 0 0 1 1 0 1 0 0
-//  */
-// vector<int> CamadaFisicaTransmissoraCodificacaoManchester(bitset<8*MAX_SIZE> quadro, int size) {
-//     int bits = size*8;
-//     vector<int> fluxoBrutoDeBits(bits, 0);
-//     bitset<8*MAX_SIZE> clock;
+    Entrada:
+        quadro (bitset).
+    Saída:
+        fluxo bruto de bits (vector<int>).
 
-//     for (size_t i = 0; i < bits; i++) {
-//         if (i % 2 == 0) clock.set(i);
-//     }
-//     if (LOG_FLAG) {
-//         cout << "\tClock:\t\t" << clock << "\n";
-//     }
-//     quadro ^= clock; // XOR
+    Exemplo:
+        CamadaFisicaTransmissoraCodificacaoManchester(01100001);
+        >> 0 0 1 1 0 1 0 0
+ */
+void CamadaFisicaTransmissoraCodificacaoManchester(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
+    int numBits = ContaTamanhoQuadro(quadro)*8;
+    bitset<FRAME_SIZE> clock;
 
-//     for (size_t i = 0; i < bits; i++) {
-//         if (quadro[i]) fluxoBrutoDeBits[(bits-1)-i] = 1;
-//     }
+    for (size_t i = 0; i < numBits; i++) {
+        if (i % 2 == 0) clock.set(i);
+    }
+    if (LOG_FLAG) {
+        cout << "\tClock:\n\t\t" << clock << "\n";
+    }
 
-//     return fluxoBrutoDeBits;
-// }
+    quadro ^= clock; // XOR
 
-// /*
-//     Simula o protocolo de codificação bipolar na Camada Física da Aplicação
-//     Transmissora. Cada bit 1 o tensão alternadamente vale 1 e -1 e cada bit 0
-//     equivale 0 de tensão.
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (quadro[i]) ? 1 : 0;
+        fluxoBrutoDeBits.push_back(bit);
+    }
+}
 
-//     Entrada:
-//         quadro (bitset).
-//     Saída:
-//         fluxo bruto de bits (vector<int>).
+/*
+    Simula o protocolo de codificação bipolar na Camada Física da Aplicação
+    Transmissora. Cada bit 1 o tensão alternadamente vale 1 e -1 e cada bit 0
+    equivale 0 de tensão.
 
-//     Exemplo:
-//         CamadaFisicaTransmissoraCodificacaoBipolar(01100001);
-//         >> 0 -1 1 0 0 0 0 -1
-//  */
-// vector<int> CamadaFisicaTransmissoraCodificacaoBipolar(bitset<8*MAX_SIZE> quadro, int size) {
-//     int bits = size*8;
-//     vector<int> fluxoBrutoDeBits(bits, 0);
-//     int valor = 1;
+    Entrada:
+        quadro (bitset).
+    Saída:
+        fluxo bruto de bits (vector<int>).
 
-//     for (size_t i = 0; i < bits; i++) {
-//         if (quadro[i]) {
-//             valor = -valor;
-//             fluxoBrutoDeBits[(bits-1)-i] = valor;
-//         } else {
-//             fluxoBrutoDeBits[(bits-1)-i] = 0;
-//         }
-//     }
+    Exemplo:
+        CamadaFisicaTransmissoraCodificacaoBipolar(01100001);
+        >> 0 -1 1 0 0 0 0 -1
+ */
+void CamadaFisicaTransmissoraCodificacaoBipolar(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
+    int numBits = ContaTamanhoQuadro(quadro)*8;
+    int valor = -1;
 
-//     return fluxoBrutoDeBits;
-// }
+    for (size_t i = 0; i < numBits; i++) {
+        if (quadro[i]) {
+            valor = -valor;
+            fluxoBrutoDeBits.push_back(valor);
+        } else {
+            fluxoBrutoDeBits.push_back(0);
+        }
+    }
+}
 
-// /*
-//     Simula o meio de transmissão e o próprio processo de transmissão entre a
-//     Aplicação Transmissora e a Aplicação Receptora.
+/*
+    Simula o meio de transmissão e o próprio processo de transmissão entre a
+    Aplicação Transmissora e a Aplicação Receptora.
 
-//     Entrada:
-//         fluxo bruto de bits (vector<int>).
-//     Saída:
-//         fluxo bruto de bits (vector<int>) e chama a função da Camada
-//         Física Receptora.
+    Entrada:
+        fluxo bruto de bits (vector<int>).
+    Saída:
+        fluxo bruto de bits (vector<int>) e chama a função da Camada
+        Física Receptora.
 
-//     Exemplo:
-//         MeioDeComunicacao(0 1 1 0 0 0 0 1);
-//         >> 0 1 1 0 0 0 0 1
-//  */
-// void MeioDeComunicacao(vector<int> fluxoBrutoDeBits) {
-//     int bits = fluxoBrutoDeBits.size();
-//     vector<int> fluxoBrutoDeBits_origem(bits)
-//         , fluxoBrutoDeBits_destino(bits);
+    Exemplo:
+        MeioDeComunicacao(0 1 1 0 0 0 0 1);
+        >> 0 1 1 0 0 0 0 1
+ */
+void MeioDeComunicacao(vector<int> fluxoBrutoDeBits) {
+    int bits = fluxoBrutoDeBits.size();
+    vector<int> fluxoBrutoDeBits_origem(bits)
+        , fluxoBrutoDeBits_destino(bits);
 
-//     fluxoBrutoDeBits_origem = fluxoBrutoDeBits;
+    fluxoBrutoDeBits_origem = fluxoBrutoDeBits;
 
-//     for (size_t i = 0; i < bits; i++) {
-//         fluxoBrutoDeBits_destino[i] = fluxoBrutoDeBits_origem[i];
-//     }
+    for (size_t i = 0; i < bits; i++) {
+        fluxoBrutoDeBits_destino[i] = fluxoBrutoDeBits_origem[i];
+    }
 
-//     if (LOG_FLAG) {
-//         cout << "\nLOGS - Meio de Comunicação:\n";
-//         cout << "\tFluxo de bits enviados:\t\t";
-//         PrintaVetor(fluxoBrutoDeBits_origem);
-//         cout << "\tFluxo de bits recebidos:\t";
-//         PrintaVetor(fluxoBrutoDeBits_destino);
-//     }
+    if (LOG_FLAG) {
+        cout << "\nLOGS - Meio de Comunicação:\n";
+        cout << "\tFluxo de bits enviados:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBits_origem);
+        cout << "\tFluxo de bits recebidos:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBits_destino);
+    }
 
-//     CamadaFisicaReceptora(fluxoBrutoDeBits_destino);
-// }
+    CamadaFisicaReceptora(fluxoBrutoDeBits_destino);
+}
 
-// /*
-//     Simula a Camada Física da Aplicação Receptora. A função processa o
-//     fluxo bruto de bits e seleciona a decodificação com base na escolha do usuário que resultará em um quadro. Na sequência este será enviado para
-//     a Camada de Aplicação.
+/*
+    Simula a Camada Física da Aplicação Receptora. A função processa o
+    fluxo bruto de bits e seleciona a decodificação com base na escolha do usuário que resultará em um quadro. Na sequência este será enviado para
+    a Camada de Aplicação.
 
-//     Entrada:
-//         fluxo bruto de bits (vector<int>).
-//     Saída:
-//         quadro (bitset) e chama a função da Camada de Aplicação Receptora.
+    Entrada:
+        fluxo bruto de bits (vector<int>).
+    Saída:
+        quadro (bitset) e chama a função da Camada de Aplicação Receptora.
 
-//     Exemplo:
-//         CamadaFisicaReceptora(0 1 1 0 0 0 0 1);
-//         se tipoCodificacao==1 >> 01100001
-//  */
-// void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits) {
-//     int bits = fluxoBrutoDeBits.size();
-//     bitset<8*MAX_SIZE> quadro;
+    Exemplo:
+        CamadaFisicaReceptora(0 1 1 0 0 0 0 1);
+        se tipoCodificacao==1 >> 01100001
+ */
+void CamadaFisicaReceptora(vector<int> fluxoBrutoDeBits) {
+    vector<int> fluxoBrutoDeBitsDecodificado;
 
-//     if (LOG_FLAG) {
-//         cout << "\nLOGS - DECODE Camada Física:\n";
-//         cout << "\tFluxo de bits:\t";
-//         PrintaVetor(fluxoBrutoDeBits);
-//     }
-//     switch (tipoCodificacao) {
-//         case 1:
-//             quadro = CamadaFisicaTransmissoraDecodificacaoBinaria(fluxoBrutoDeBits);
-//             break;
-//         case 2:
-//             quadro = CamadaFisicaTransmissoraDecodificacaoManchester(fluxoBrutoDeBits);
-//             break;
-//         case 3:
-//             quadro = CamadaFisicaTransmissoraDecodificacaoBipolar(fluxoBrutoDeBits);
-//             break;
-//     }
-//     if (LOG_FLAG) {
-//         cout << "\tQuadro: \t" << quadro << endl;
-//     }
-//     CamadaDeAplicacaoReceptora(quadro, bits);
-// }
+    if (LOG_FLAG) {
+        cout << "\nLOGS - DECODE Camada Física:\n";
+        cout << "\tFluxo de bits:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBits);
+    }
+
+    // cout << "\nDEBUG: " << numQuadros << "\n";
+
+    switch (tipoCodificacao) {
+        case 1:
+            fluxoBrutoDeBitsDecodificado = CamadaFisicaTransmissoraDecodificacaoBinaria(fluxoBrutoDeBits);
+            break;
+        case 2:
+            fluxoBrutoDeBitsDecodificado = CamadaFisicaTransmissoraDecodificacaoManchester(fluxoBrutoDeBits);
+            break;
+        case 3:
+            fluxoBrutoDeBitsDecodificado = CamadaFisicaTransmissoraDecodificacaoBipolar(fluxoBrutoDeBits);
+            break;
+    }
+
+    if (LOG_FLAG) {
+        cout << "\tFluxo de bits decodificado:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBitsDecodificado);
+    }
+    // CamadaDeAplicacaoReceptora(quadro, bits);
+}
 
 
-// /*
-//     Simula o protocolo de decodificação binária NRZ (Non Return Zero) na Camada
-//     Física da Aplicação Receptora. Cada tensão igual 1 equivale a um bit 1 e tensão igual a 0 vale um bit 0.
+/*
+    Simula o protocolo de decodificação binária NRZ (Non Return Zero) na Camada
+    Física da Aplicação Receptora. Cada tensão igual 1 equivale a um bit 1 e tensão igual a 0 vale um bit 0.
 
-//     Entrada:
-//         fluxo bruto de bits (vector<int>).
-//     Saída:
-//         quadro (bitset).
+    Entrada:
+        fluxo bruto de bits (vector<int>).
+    Saída:
+        quadro (bitset).
 
-//     Exemplo:
-//         CamadaFisicaTransmissoraDecodificacaoBinaria(0 1 1 0 0 0 0 1);
-//         >> 01100001
-//  */
-// bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> fluxoBrutoDeBits) {
-//     int bits = fluxoBrutoDeBits.size();
-//     bitset<8*MAX_SIZE> quadro;
+    Exemplo:
+        CamadaFisicaTransmissoraDecodificacaoBinaria(0 1 1 0 0 0 0 1);
+        >> 01100001
+ */
+vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(vector<int> fluxoBrutoDeBits) {
+    vector<int> fluxoBrutoDeBitsDecodificado;
+    int numBits = fluxoBrutoDeBits.size();
 
-//     for (size_t i = 0; i < bits; i++) {
-//         if (fluxoBrutoDeBits[i] == 1) {
-//             quadro.set((bits-1)-i);
-//         } else {
-//             quadro.reset((bits-1)-i);
-//         }
-//     }
+    for (size_t i = 0; i < numBits; i++) {
+        fluxoBrutoDeBitsDecodificado.push_back(fluxoBrutoDeBits.back());
+        fluxoBrutoDeBits.pop_back();
+    }
 
-//     return quadro;
-// }
+    return fluxoBrutoDeBitsDecodificado;
+}
 
-// /*
-//     Simula o protocolo de decodificação Manchester na Camada Física da Aplicação
-//     Receptora. Existe um clock (começa do 0 e alterna entre 1 e 0 pelo tamanho
-//     da mensagem). Cada valor de tensão que for diferente do clock vale um bit 1 e sdo contrário vale um bit 0 (XOR).
+/*
+    Simula o protocolo de decodificação Manchester na Camada Física da Aplicação
+    Receptora. Existe um clock (começa do 0 e alterna entre 1 e 0 pelo tamanho
+    da mensagem). Cada valor de tensão que for diferente do clock vale um bit 1 e sdo contrário vale um bit 0 (XOR).
 
-//     Entrada:
-//         fluxo bruto de bits (vector<int>).
-//     Saída:
-//         quadro (bitset).
+    Entrada:
+        fluxo bruto de bits (vector<int>).
+    Saída:
+        quadro (bitset).
 
-//     Exemplo:
-//         CamadaFisicaTransmissoraDecodificacaoManchester(0 0 1 1 0 1 0 0);
-//         >> 01100001
-//  */
-// bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> fluxoBrutoDeBits) {
-//     int bits = fluxoBrutoDeBits.size();
-//     bitset<8*MAX_SIZE> clock;
-//     bitset<8*MAX_SIZE> quadro;
+    Exemplo:
+        CamadaFisicaTransmissoraDecodificacaoManchester(0 0 1 1 0 1 0 0);
+        >> 01100001
+ */
+vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> fluxoBrutoDeBits) {
+    vector<int> clock;
+    vector<int> fluxoBrutoDeBitsDecodificado;
+    int numBits = fluxoBrutoDeBits.size();
 
-//     for (size_t i = 0; i < bits; i++) {
-//         if (i % 2 == 0) clock.set(i);
-//     }
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (i % 2 == 0) ? 1 : 0;
+        clock.push_back(bit);
+    }
+    if (LOG_FLAG) {
+        cout << "\tClock:\n\t\t";
+        PrintaVetor(clock);
+    }
 
-//     for (size_t i = 0; i < bits; i++) {
-//         if (fluxoBrutoDeBits[i] == 1) {
-//             quadro.set((bits-1)-i);
-//         } else {
-//             quadro.reset((bits-1)-i);
-//         }
-//     }
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (fluxoBrutoDeBits[(numBits-1)-i] != clock[(numBits-1)-i]) ? 1: 0;
+        fluxoBrutoDeBitsDecodificado.push_back(bit);
+    }
 
-//     if (LOG_FLAG) {
-//         cout << "\tFluxo de bits:\t" << quadro << "\n";
-//         cout << "\tClock:\t\t" << clock << "\n";
-//     }
+    return fluxoBrutoDeBitsDecodificado;
+}
 
-//     quadro ^= clock; // XOR
+/*
+    Simula o protocolo de decodificação bipolar na Camada Física da Aplicação
+    Receptora. Os valores de tensão -1 e 1 equivale a um bit 1 e o valor 0
+    equivale ao bit 0.
 
-//     return quadro;
-// }
+    Entrada:
+        fluxo bruto de bits (vector<int>).
+    Saída:
+        quadro (bitset).
 
-// /*
-//     Simula o protocolo de decodificação bipolar na Camada Física da Aplicação
-//     Receptora. Os valores de tensão -1 e 1 equivale a um bit 1 e o valor 0
-//     equivale ao bit 0.
+    Exemplo:
+        CamadaFisicaTransmissoraDecodificacaoManchester(0 -1 1 0 0 0 0 -1);
+        >> 01100001
+ */
+vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(vector<int> fluxoBrutoDeBits) {
+    vector<int> fluxoBrutoDeBitsDecodificado;
+    int numBits = fluxoBrutoDeBits.size();
 
-//     Entrada:
-//         fluxo bruto de bits (vector<int>).
-//     Saída:
-//         quadro (bitset).
+    for (size_t i = 0; i < numBits; i++) {
+        fluxoBrutoDeBitsDecodificado.push_back(abs(fluxoBrutoDeBits.back()));
+        fluxoBrutoDeBits.pop_back();
+    }
 
-//     Exemplo:
-//         CamadaFisicaTransmissoraDecodificacaoManchester(0 -1 1 0 0 0 0 -1);
-//         >> 01100001
-//  */
-// bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> fluxoBrutoDeBits) {
-//     int bits = fluxoBrutoDeBits.size();
-//     bitset<8*MAX_SIZE> quadro;
-
-//     for (size_t i = 0; i < bits; i++) {
-//         if (abs(fluxoBrutoDeBits[i]) == 1) {
-//             quadro.set((bits-1)-i);
-//         } else {
-//             quadro.reset((bits-1)-i);
-//         }
-//     }
-
-//     return quadro;
-// }
+    return fluxoBrutoDeBitsDecodificado;
+}

@@ -66,7 +66,7 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
                 }
             }
             pacote <<= 8;
-            pacote |= mensagem[byte_idx];
+            pacote |= mensagem[(tamanho-1)-byte_idx];
         }
         sequenciaPacotes.push_back(pacote);
     }
