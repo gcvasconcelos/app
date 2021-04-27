@@ -9,10 +9,10 @@ void CamadaFisicaTransmissoraCodificacaoBinaria(std::bitset<FRAME_SIZE> quadro, 
 void CamadaFisicaTransmissoraCodificacaoManchester(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
 void CamadaFisicaTransmissoraCodificacaoBipolar(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
 
-void MeioDeComunicacao(std::vector<int> fluxoBrutoDeBits);
+void MeioDeComunicacao(std::vector<int> sinalEletricoOrigem);
 
-void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits);
+void CamadaFisicaReceptora(std::vector<int> sinalEletrico);
 
-std::vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> fluxoBrutoDeBits);
-std::vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> fluxoBrutoDeBits);
-std::vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> fluxoBrutoDeBits);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> sinalEletrico);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> sinalEletrico);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> sinalEletrico);

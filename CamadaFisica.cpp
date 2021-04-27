@@ -34,7 +34,7 @@ int numQuadros = 0;
         >> 0 1 1 0 0 0 0 1
  */
 void CamadaFisicaTransmissora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
-    vector<int> fluxoBrutoDeBits;
+    vector<int> sinalEletrico;
     numQuadros = sequenciaQuadros.size();
 
     cout << "\nOpções de codificação na camada física da Aplicação Transmissora:\n";
@@ -56,13 +56,13 @@ void CamadaFisicaTransmissora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
 
         switch (tipoCodificacao) {
             case 1:
-                CamadaFisicaTransmissoraCodificacaoBinaria(quadro, fluxoBrutoDeBits);
+                CamadaFisicaTransmissoraCodificacaoBinaria(quadro, sinalEletrico);
                 break;
             case 2:
-                CamadaFisicaTransmissoraCodificacaoManchester(quadro, fluxoBrutoDeBits);
+                CamadaFisicaTransmissoraCodificacaoManchester(quadro, sinalEletrico);
                 break;
             case 3:
-                CamadaFisicaTransmissoraCodificacaoBipolar(quadro, fluxoBrutoDeBits);
+                CamadaFisicaTransmissoraCodificacaoBipolar(quadro, sinalEletrico);
                 break;
             default:
                 cout << "Erro na Camada Física: tipo de codificação não suportado. Encerrando programa." << endl;
@@ -71,10 +71,11 @@ void CamadaFisicaTransmissora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
     }
 
     if (LOG_FLAG) {
-        cout << "\tFluxo de bits:\n\t\t";
-        PrintaVetor(fluxoBrutoDeBits);
+        cout << "\tSinal Elétrico:\n\t\t";
+        PrintaVetor(sinalEletrico);
     }
-    MeioDeComunicacao(fluxoBrutoDeBits);
+
+    MeioDeComunicacao(sinalEletrico);
 }
 
 /*
@@ -176,26 +177,23 @@ void CamadaFisicaTransmissoraCodificacaoBipolar(bitset<FRAME_SIZE> quadro, vecto
         MeioDeComunicacao(0 1 1 0 0 0 0 1);
         >> 0 1 1 0 0 0 0 1
  */
-void MeioDeComunicacao(vector<int> fluxoBrutoDeBits) {
-    int bits = fluxoBrutoDeBits.size();
-    vector<int> fluxoBrutoDeBits_origem(bits)
-        , fluxoBrutoDeBits_destino(bits);
+void MeioDeComunicacao(vector<int> sinalEletricoOrigem) {
+    int periodo = sinalEletricoOrigem.size();
+    vector<int> sinalEletricoDestino(periodo);
 
-    fluxoBrutoDeBits_origem = fluxoBrutoDeBits;
-
-    for (size_t i = 0; i < bits; i++) {
-        fluxoBrutoDeBits_destino[i] = fluxoBrutoDeBits_origem[i];
+    for (size_t i = 0; i < periodo; i++) {
+        sinalEletricoDestino[i] = sinalEletricoOrigem[i];
     }
 
     if (LOG_FLAG) {
         cout << "\nLOGS - Meio de Comunicação:\n";
-        cout << "\tFluxo de bits enviados:\n\t\t";
-        PrintaVetor(fluxoBrutoDeBits_origem);
-        cout << "\tFluxo de bits recebidos:\n\t\t";
-        PrintaVetor(fluxoBrutoDeBits_destino);
+        cout << "\tSinal elétrico enviado:\n\t\t";
+        PrintaVetor(sinalEletricoOrigem);
+        cout << "\tSinal elétrico recebido:\n\t\t";
+        PrintaVetor(sinalEletricoDestino);
     }
 
-    CamadaFisicaReceptora(fluxoBrutoDeBits_destino);
+    CamadaFisicaReceptora(sinalEletricoDestino);
 }
 
 /*
@@ -212,32 +210,32 @@ void MeioDeComunicacao(vector<int> fluxoBrutoDeBits) {
         CamadaFisicaReceptora(0 1 1 0 0 0 0 1);
         se tipoCodificacao==1 >> 01100001
  */
-void CamadaFisicaReceptora(vector<int> fluxoBrutoDeBits) {
-    vector<int> fluxoBrutoDeBitsDecodificado;
+void CamadaFisicaReceptora(vector<int> sinalEletrico) {
+    vector<int> fluxoBrutoDeBits;
 
     if (LOG_FLAG) {
         cout << "\nLOGS - DECODE Camada Física:\n";
-        cout << "\tFluxo de bits:\n\t\t";
-        PrintaVetor(fluxoBrutoDeBits);
+        cout << "\tSinal elétrico:\n\t\t";
+        PrintaVetor(sinalEletrico);
     }
 
     switch (tipoCodificacao) {
         case 1:
-            fluxoBrutoDeBitsDecodificado = CamadaFisicaTransmissoraDecodificacaoBinaria(fluxoBrutoDeBits);
+            fluxoBrutoDeBits = CamadaFisicaTransmissoraDecodificacaoBinaria(sinalEletrico);
             break;
         case 2:
-            fluxoBrutoDeBitsDecodificado = CamadaFisicaTransmissoraDecodificacaoManchester(fluxoBrutoDeBits);
+            fluxoBrutoDeBits = CamadaFisicaTransmissoraDecodificacaoManchester(sinalEletrico);
             break;
         case 3:
-            fluxoBrutoDeBitsDecodificado = CamadaFisicaTransmissoraDecodificacaoBipolar(fluxoBrutoDeBits);
+            fluxoBrutoDeBits = CamadaFisicaTransmissoraDecodificacaoBipolar(sinalEletrico);
             break;
     }
 
     if (LOG_FLAG) {
-        cout << "\tFluxo de bits decodificado:\n\t\t";
-        PrintaVetor(fluxoBrutoDeBitsDecodificado);
+        cout << "\tFluxo de bits:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBits);
     }
-    CamadaEnlaceDadosReceptora(fluxoBrutoDeBitsDecodificado);
+    CamadaEnlaceDadosReceptora(fluxoBrutoDeBits);
 }
 
 
@@ -254,16 +252,16 @@ void CamadaFisicaReceptora(vector<int> fluxoBrutoDeBits) {
         CamadaFisicaTransmissoraDecodificacaoBinaria(0 1 1 0 0 0 0 1);
         >> 01100001
  */
-vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(vector<int> fluxoBrutoDeBits) {
-    int numBits = fluxoBrutoDeBits.size();
-    vector<int> fluxoBrutoDeBitsDecodificado;
+vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(vector<int> sinalEletrico) {
+    int numBits = sinalEletrico.size();
+    vector<int> fluxoBrutoDeBits;
 
     for (size_t i = 0; i < numBits; i++) {
-        fluxoBrutoDeBitsDecodificado.push_back(fluxoBrutoDeBits.back());
-        fluxoBrutoDeBits.pop_back();
+        fluxoBrutoDeBits.push_back(sinalEletrico.back());
+        sinalEletrico.pop_back();
     }
 
-    return fluxoBrutoDeBitsDecodificado;
+    return fluxoBrutoDeBits;
 }
 
 /*
@@ -280,9 +278,9 @@ vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(vector<int> fluxoBrutoD
         CamadaFisicaTransmissoraDecodificacaoManchester(0 0 1 1 0 1 0 0);
         >> 01100001
  */
-vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> fluxoBrutoDeBits) {
-    int numBits = fluxoBrutoDeBits.size();
-    vector<int> fluxoBrutoDeBitsDecodificado;
+vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> sinalEletrico) {
+    int numBits = sinalEletrico.size();
+    vector<int> fluxoBrutoDeBits;
     vector<int> clock;
 
     for (size_t i = 0; i < numBits; i++) {
@@ -295,11 +293,11 @@ vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> fluxoBru
     }
 
     for (size_t i = 0; i < numBits; i++) {
-        int bit = (fluxoBrutoDeBits[(numBits-1)-i] != clock[(numBits-1)-i]) ? 1: 0;
-        fluxoBrutoDeBitsDecodificado.push_back(bit);
+        int bit = (sinalEletrico[(numBits-1)-i] != clock[(numBits-1)-i]) ? 1: 0;
+        fluxoBrutoDeBits.push_back(bit);
     }
 
-    return fluxoBrutoDeBitsDecodificado;
+    return fluxoBrutoDeBits;
 }
 
 /*
@@ -316,14 +314,14 @@ vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> fluxoBru
         CamadaFisicaTransmissoraDecodificacaoManchester(0 -1 1 0 0 0 0 -1);
         >> 01100001
  */
-vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(vector<int> fluxoBrutoDeBits) {
-    int numBits = fluxoBrutoDeBits.size();
-    vector<int> fluxoBrutoDeBitsDecodificado;
+vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(vector<int> sinalEletrico) {
+    int numBits = sinalEletrico.size();
+    vector<int> fluxoBrutoDeBits;
 
     for (size_t i = 0; i < numBits; i++) {
-        fluxoBrutoDeBitsDecodificado.push_back(abs(fluxoBrutoDeBits.back()));
-        fluxoBrutoDeBits.pop_back();
+        fluxoBrutoDeBits.push_back(abs(sinalEletrico.back()));
+        sinalEletrico.pop_back();
     }
 
-    return fluxoBrutoDeBitsDecodificado;
+    return fluxoBrutoDeBits;
 }

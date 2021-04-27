@@ -13,6 +13,10 @@ int tipoEnquadramento = 0;
 void CamadaEnlaceDadosTransmissora(vector<bitset<PACKET_SIZE>> sequenciaPacotes) {
     vector<bitset<FRAME_SIZE>> sequenciaQuadros;
 
+    if (LOG_FLAG) {
+        cout << "\nLOGS - ENCODE Camada de Enlace:\n";
+    }
+
     for (size_t i = 0; i < sequenciaPacotes.size(); i++){
         bitset<FRAME_SIZE> quadro;
         quadro = sequenciaPacotes[i].to_ulong();
@@ -38,6 +42,7 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosTransmissoraEnquadramento(vector<bit
 
     if (LOG_FLAG) {
         cout << "\nLOGS - ENCODE Camada de Enlace:\n";
+        cout << "\tEnquadramento:\n";
         cout << "\tQuadros:\n" ;
         PrintaVetorBitset(sequenciaQuadros);
     }
