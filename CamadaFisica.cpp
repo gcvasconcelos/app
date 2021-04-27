@@ -1,7 +1,8 @@
 #include <iostream>
 #include <cmath>
-#include <bitset>
-#include <vector>
+
+#include "CamadaAplicacao.hpp"
+#include "CamadaEnlace.hpp"
 #include "CamadaFisica.hpp"
 #include "FuncoesAuxiliares.hpp"
 
@@ -10,66 +11,7 @@ using namespace std;
 //  Variável global para receber codificação selecionada pelo usuário e ser
 //  usada na decodificação
 int tipoCodificacao = 0;
-
-int flagLogs = 0;
-
-/*
-    Simula a Aplicação Transmissora de uma mensagem em texto e de tamanho
-    limitado. A função da início ao processo de transmissão.
-
-    Entrada:
-        recebe no terminal uma string de até 1024 caracteres.
-    Saída:
-        chama a função da Camada de Aplicação Transmissora.
-
-    Exemplo:
-        << "qualquer mensagem"
- */
-void AplicacaoTransmissora(int flag) {
-    string mensagem;
-
-    flagLogs = flag;
-
-    cout << "\nDigite uma mensagem: ";
-    cin.ignore();
-    getline(cin, mensagem);
-
-    CamadaDeAplicacaoTransmissora(mensagem);
-}
-
-/*
-    Simula a Camada de Aplicação da Aplicação Transmissora. A função processa a
-    mensagem e a transforma em quadros (bits dos caracteres da mensagem), de
-    tamanho fixo, para serem enviados a camada física. Funciona como uma
-    interface entre o usuário e a camada física.
-
-    Entrada:
-        string da mensagem.
-    Saída:
-        quadro (bitset) correspondente a mensagem e chama a função da Camada
-        Física Transmissora.
-
-    Exemplo:
-        CamadaDeAplicacaoTransmissora("mensagem");
-        >> 0110110101100101011011100111001101100001011001110110010101101101
- */
-void CamadaDeAplicacaoTransmissora(string mensagem) {
-    bitset<8*MAX_SIZE> quadro;
-    int size = mensagem.size();
-
-    for (size_t i = 0; i < size; i++) {
-        quadro <<= 8;
-        quadro |= mensagem[i];
-    }
-
-    if (flagLogs) {
-        cout << "\nLOGS - ENCODE Camada de Aplicação\n";
-        cout << "\tMensagem: " << mensagem << "\n";
-        cout << "\tQuadro: " << quadro << endl;
-    }
-
-    CamadaFisicaTransmissora(quadro, size);
-}
+int numQuadros = 0;
 
 /*
     Simula a Camada Física da Aplicação Transmissora. A função processa o
@@ -91,8 +33,9 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
         << 1
         >> 0 1 1 0 0 0 0 1
  */
-void CamadaFisicaTransmissora(bitset<8*MAX_SIZE> quadro, int size) {
-    vector<int> fluxoBrutoDeBits(size*8);
+void CamadaFisicaTransmissora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
+    vector<int> sinalEletrico;
+    numQuadros = sequenciaQuadros.size();
 
     cout << "\nOpções de codificação na camada física da Aplicação Transmissora:\n";
     cout << "\t1 - Codificação binária (NRZ unipolar)\n";
@@ -102,29 +45,37 @@ void CamadaFisicaTransmissora(bitset<8*MAX_SIZE> quadro, int size) {
     cout << "Escolha um tipo de codificação: ";
     cin >> tipoCodificacao;
 
-    if (flagLogs) {
+    if (LOG_FLAG) {
         cout << "\nLOGS - ENCODE Camada Física:\n";
-        cout << "\tQuadro:\t\t" << quadro << "\n";
+        cout << "\tQuadros:\n" ;
+        PrintaVetorBitset(sequenciaQuadros);
     }
-    switch (tipoCodificacao) {
-        case 1:
-            fluxoBrutoDeBits = CamadaFisicaTransmissoraCodificacaoBinaria(quadro, size);
-            break;
-        case 2:
-            fluxoBrutoDeBits = CamadaFisicaTransmissoraCodificacaoManchester(quadro, size);
-            break;
-        case 3:
-            fluxoBrutoDeBits = CamadaFisicaTransmissoraCodificacaoBipolar(quadro, size);
-            break;
-        default:
-            cout << "Erro. Encerrando programa." << endl;
-            return;
+    for (size_t i = 0; i < numQuadros; i++) {
+        bitset<FRAME_SIZE> quadro;
+        quadro = sequenciaQuadros[i];
+
+        switch (tipoCodificacao) {
+            case 1:
+                CamadaFisicaTransmissoraCodificacaoBinaria(quadro, sinalEletrico);
+                break;
+            case 2:
+                CamadaFisicaTransmissoraCodificacaoManchester(quadro, sinalEletrico);
+                break;
+            case 3:
+                CamadaFisicaTransmissoraCodificacaoBipolar(quadro, sinalEletrico);
+                break;
+            default:
+                cout << "Erro na Camada Física: tipo de codificação não suportado. Encerrando programa." << endl;
+                return;
+        }
     }
-    if (flagLogs) {
-        cout << "\tFluxo de bits:  ";
-        PrintaVetor(fluxoBrutoDeBits);
+
+    if (LOG_FLAG) {
+        cout << "\tSinal Elétrico:\n\t\t";
+        PrintaVetor(sinalEletrico);
     }
-    MeioDeComunicacao(fluxoBrutoDeBits);
+
+    MeioDeComunicacao(sinalEletrico);
 }
 
 /*
@@ -141,15 +92,14 @@ void CamadaFisicaTransmissora(bitset<8*MAX_SIZE> quadro, int size) {
         CamadaFisicaTransmissoraCodificacaoBinaria(01100001);
         >> 0 1 1 0 0 0 0 1
  */
-vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(bitset<8*MAX_SIZE> quadro, int size) {
-    int bits = size*8;
-    vector<int> fluxoBrutoDeBits(bits, 0);
+void CamadaFisicaTransmissoraCodificacaoBinaria(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
+    int numBits = ContaTamanhoQuadro(quadro)*8;
 
-    for (size_t i = 0; i < bits; i++) {
-        if (quadro[i]) fluxoBrutoDeBits[(bits-1)-i] = 1;
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (quadro[i]) ? 1 : 0;
+        fluxoBrutoDeBits.push_back(bit);
     }
-
-    return fluxoBrutoDeBits;
+    return;
 }
 
 /*
@@ -166,24 +116,23 @@ vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(bitset<8*MAX_SIZE> quadro
         CamadaFisicaTransmissoraCodificacaoManchester(01100001);
         >> 0 0 1 1 0 1 0 0
  */
-vector<int> CamadaFisicaTransmissoraCodificacaoManchester(bitset<8*MAX_SIZE> quadro, int size) {
-    int bits = size*8;
-    vector<int> fluxoBrutoDeBits(bits, 0);
-    bitset<8*MAX_SIZE> clock;
+void CamadaFisicaTransmissoraCodificacaoManchester(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
+    int numBits = ContaTamanhoQuadro(quadro)*8;
+    bitset<FRAME_SIZE> clock;
 
-    for (size_t i = 0; i < bits; i++) {
+    for (size_t i = 0; i < numBits; i++) {
         if (i % 2 == 0) clock.set(i);
     }
-    if (flagLogs) {
-        cout << "\tClock:\t\t" << clock << "\n";
+    if (LOG_FLAG) {
+        cout << "\tClock:\n\t\t" << clock << "\n";
     }
+
     quadro ^= clock; // XOR
 
-    for (size_t i = 0; i < bits; i++) {
-        if (quadro[i]) fluxoBrutoDeBits[(bits-1)-i] = 1;
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (quadro[i]) ? 1 : 0;
+        fluxoBrutoDeBits.push_back(bit);
     }
-
-    return fluxoBrutoDeBits;
 }
 
 /*
@@ -200,21 +149,18 @@ vector<int> CamadaFisicaTransmissoraCodificacaoManchester(bitset<8*MAX_SIZE> qua
         CamadaFisicaTransmissoraCodificacaoBipolar(01100001);
         >> 0 -1 1 0 0 0 0 -1
  */
-vector<int> CamadaFisicaTransmissoraCodificacaoBipolar(bitset<8*MAX_SIZE> quadro, int size) {
-    int bits = size*8;
-    vector<int> fluxoBrutoDeBits(bits, 0);
-    int valor = 1;
+void CamadaFisicaTransmissoraCodificacaoBipolar(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
+    int numBits = ContaTamanhoQuadro(quadro)*8;
+    int valor = -1;
 
-    for (size_t i = 0; i < bits; i++) {
+    for (size_t i = 0; i < numBits; i++) {
         if (quadro[i]) {
             valor = -valor;
-            fluxoBrutoDeBits[(bits-1)-i] = valor;
+            fluxoBrutoDeBits.push_back(valor);
         } else {
-            fluxoBrutoDeBits[(bits-1)-i] = 0;
+            fluxoBrutoDeBits.push_back(0);
         }
     }
-
-    return fluxoBrutoDeBits;
 }
 
 /*
@@ -231,26 +177,23 @@ vector<int> CamadaFisicaTransmissoraCodificacaoBipolar(bitset<8*MAX_SIZE> quadro
         MeioDeComunicacao(0 1 1 0 0 0 0 1);
         >> 0 1 1 0 0 0 0 1
  */
-void MeioDeComunicacao(vector<int> fluxoBrutoDeBits) {
-    int bits = fluxoBrutoDeBits.size();
-    vector<int> fluxoBrutoDeBits_origem(bits)
-        , fluxoBrutoDeBits_destino(bits);
+void MeioDeComunicacao(vector<int> sinalEletricoOrigem) {
+    int periodo = sinalEletricoOrigem.size();
+    vector<int> sinalEletricoDestino(periodo);
 
-    fluxoBrutoDeBits_origem = fluxoBrutoDeBits;
-
-    for (size_t i = 0; i < bits; i++) {
-        fluxoBrutoDeBits_destino[i] = fluxoBrutoDeBits_origem[i];
+    for (size_t i = 0; i < periodo; i++) {
+        sinalEletricoDestino[i] = sinalEletricoOrigem[i];
     }
 
-    if (flagLogs) {
+    if (LOG_FLAG) {
         cout << "\nLOGS - Meio de Comunicação:\n";
-        cout << "\tFluxo de bits enviados:\t\t";
-        PrintaVetor(fluxoBrutoDeBits_origem);
-        cout << "\tFluxo de bits recebidos:\t";
-        PrintaVetor(fluxoBrutoDeBits_destino);
+        cout << "\tSinal elétrico enviado:\n\t\t";
+        PrintaVetor(sinalEletricoOrigem);
+        cout << "\tSinal elétrico recebido:\n\t\t";
+        PrintaVetor(sinalEletricoDestino);
     }
 
-    CamadaFisicaReceptora(fluxoBrutoDeBits_destino);
+    CamadaFisicaReceptora(sinalEletricoDestino);
 }
 
 /*
@@ -267,30 +210,32 @@ void MeioDeComunicacao(vector<int> fluxoBrutoDeBits) {
         CamadaFisicaReceptora(0 1 1 0 0 0 0 1);
         se tipoCodificacao==1 >> 01100001
  */
-void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits) {
-    int bits = fluxoBrutoDeBits.size();
-    bitset<8*MAX_SIZE> quadro;
+void CamadaFisicaReceptora(vector<int> sinalEletrico) {
+    vector<int> fluxoBrutoDeBits;
 
-    if (flagLogs) {
+    if (LOG_FLAG) {
         cout << "\nLOGS - DECODE Camada Física:\n";
-        cout << "\tFluxo de bits:\t";
-        PrintaVetor(fluxoBrutoDeBits);
+        cout << "\tSinal elétrico:\n\t\t";
+        PrintaVetor(sinalEletrico);
     }
+
     switch (tipoCodificacao) {
         case 1:
-            quadro = CamadaFisicaTransmissoraDecodificacaoBinaria(fluxoBrutoDeBits);
+            fluxoBrutoDeBits = CamadaFisicaTransmissoraDecodificacaoBinaria(sinalEletrico);
             break;
         case 2:
-            quadro = CamadaFisicaTransmissoraDecodificacaoManchester(fluxoBrutoDeBits);
+            fluxoBrutoDeBits = CamadaFisicaTransmissoraDecodificacaoManchester(sinalEletrico);
             break;
         case 3:
-            quadro = CamadaFisicaTransmissoraDecodificacaoBipolar(fluxoBrutoDeBits);
+            fluxoBrutoDeBits = CamadaFisicaTransmissoraDecodificacaoBipolar(sinalEletrico);
             break;
     }
-    if (flagLogs) {
-        cout << "\tQuadro: \t" << quadro << endl;
+
+    if (LOG_FLAG) {
+        cout << "\tFluxo de bits:\n\t\t";
+        PrintaVetor(fluxoBrutoDeBits);
     }
-    CamadaDeAplicacaoReceptora(quadro, bits);
+    CamadaEnlaceDadosReceptora(fluxoBrutoDeBits);
 }
 
 
@@ -307,19 +252,16 @@ void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits) {
         CamadaFisicaTransmissoraDecodificacaoBinaria(0 1 1 0 0 0 0 1);
         >> 01100001
  */
-bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> fluxoBrutoDeBits) {
-    int bits = fluxoBrutoDeBits.size();
-    bitset<8*MAX_SIZE> quadro;
+vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(vector<int> sinalEletrico) {
+    int numBits = sinalEletrico.size();
+    vector<int> fluxoBrutoDeBits;
 
-    for (size_t i = 0; i < bits; i++) {
-        if (fluxoBrutoDeBits[i] == 1) {
-            quadro.set((bits-1)-i);
-        } else {
-            quadro.reset((bits-1)-i);
-        }
+    for (size_t i = 0; i < numBits; i++) {
+        fluxoBrutoDeBits.push_back(sinalEletrico.back());
+        sinalEletrico.pop_back();
     }
 
-    return quadro;
+    return fluxoBrutoDeBits;
 }
 
 /*
@@ -336,31 +278,26 @@ bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int>
         CamadaFisicaTransmissoraDecodificacaoManchester(0 0 1 1 0 1 0 0);
         >> 01100001
  */
-bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> fluxoBrutoDeBits) {
-    int bits = fluxoBrutoDeBits.size();
-    bitset<8*MAX_SIZE> clock;
-    bitset<8*MAX_SIZE> quadro;
+vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(vector<int> sinalEletrico) {
+    int numBits = sinalEletrico.size();
+    vector<int> fluxoBrutoDeBits;
+    vector<int> clock;
 
-    for (size_t i = 0; i < bits; i++) {
-        if (i % 2 == 0) clock.set(i);
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (i % 2 == 0) ? 1 : 0;
+        clock.push_back(bit);
+    }
+    if (LOG_FLAG) {
+        cout << "\tClock:\n\t\t";
+        PrintaVetor(clock);
     }
 
-    for (size_t i = 0; i < bits; i++) {
-        if (fluxoBrutoDeBits[i] == 1) {
-            quadro.set((bits-1)-i);
-        } else {
-            quadro.reset((bits-1)-i);
-        }
+    for (size_t i = 0; i < numBits; i++) {
+        int bit = (sinalEletrico[(numBits-1)-i] != clock[(numBits-1)-i]) ? 1: 0;
+        fluxoBrutoDeBits.push_back(bit);
     }
 
-    if (flagLogs) {
-        cout << "\tFluxo de bits:\t" << quadro << "\n";
-        cout << "\tClock:\t\t" << clock << "\n";
-    }
-
-    quadro ^= clock; // XOR
-
-    return quadro;
+    return fluxoBrutoDeBits;
 }
 
 /*
@@ -377,93 +314,14 @@ bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<i
         CamadaFisicaTransmissoraDecodificacaoManchester(0 -1 1 0 0 0 0 -1);
         >> 01100001
  */
-bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> fluxoBrutoDeBits) {
-    int bits = fluxoBrutoDeBits.size();
-    bitset<8*MAX_SIZE> quadro;
+vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(vector<int> sinalEletrico) {
+    int numBits = sinalEletrico.size();
+    vector<int> fluxoBrutoDeBits;
 
-    for (size_t i = 0; i < bits; i++) {
-        if (abs(fluxoBrutoDeBits[i]) == 1) {
-            quadro.set((bits-1)-i);
-        } else {
-            quadro.reset((bits-1)-i);
-        }
+    for (size_t i = 0; i < numBits; i++) {
+        fluxoBrutoDeBits.push_back(abs(sinalEletrico.back()));
+        sinalEletrico.pop_back();
     }
 
-    return quadro;
-}
-
-/*
-    Simula a Camada de Aplicação da Aplicação Receptora. A função processa o
-    quadro e o converte na mensagem em texto recebida.
-
-    Entrada:
-        quadro (bitset).
-    Saída:
-        string da mensagem e chama a função da Aplicacao Receptora.
-
-    Exemplo:
-        CamadaDeAplicacaoReceptora(01100001);
-        >> "a"
- */
-void CamadaDeAplicacaoReceptora(bitset<8*MAX_SIZE> quadro, int size) {
-    string mensagem = "";
-    bitset<8*MAX_SIZE> ulong_kernel;
-    int num_ulongs = ceil(size/64.0);
-    int byte_idx = 0;
-    int flag = 1;
-
-    if (flagLogs) {
-        cout << "\nLOGS - DECODE Camada de Aplicação\n";
-        cout << "\tQuadro: " << quadro << "\n";
-    }
-
-    for (size_t i = 0; i < 64; i++) ulong_kernel.set(i);
-
-    // o tamanho máximo do quadro para a conversão para caracteres é um ulong
-    // (64bits). Portanto se divide o quadro em vários ulongs.
-    for (size_t i = 0; i < num_ulongs; i++) {
-        bitset<8*MAX_SIZE> quadro_ulong;
-        quadro_ulong = quadro & ulong_kernel;
-
-        for (;byte_idx < size/8;byte_idx++) {
-            // checa se está no fim do ulong para sair do loop e garante que
-            // na volta, não caia no mesmo condicional
-            if (byte_idx % 8 == 0 && byte_idx >= 8) {
-                if (flag) {
-                    flag = 0;
-                    break;
-                } else {
-                    flag = 1;
-                }
-            }
-            char ch = quadro_ulong.to_ulong() & 0xFF;
-
-            mensagem = ch + mensagem;
-            quadro_ulong >>= 8;
-        }
-        // passa para proximo ulong do quadro
-        quadro >>= 64;
-    }
-
-    if (flagLogs) {
-        cout << "\tMensagem: " << mensagem << endl;
-    }
-
-    AplicacaoReceptora(mensagem);
-}
-
-/*
-    Simula a Aplicação Receptora de uma mensagem.
-
-    Entrada:
-        string da mensagem.
-    Saída:
-        printa a mensagem recebida e encerra a simulação.
-
-    Exemplo:
-        AplicacaoReceptora("mensagem");
-        >> Mensagem recebida: mensagem
- */
-void AplicacaoReceptora(string mensagem) {
-    cout << "\nMensagem recebida: " << mensagem << endl;
+    return fluxoBrutoDeBits;
 }

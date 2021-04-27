@@ -1,27 +1,18 @@
-#include <string>
-#include <bitset>
 #include <vector>
+#include <bitset>
 
-void AplicacaoTransmissora(int flag);
+#include "Constantes.hpp"
 
-void CamadaDeAplicacaoTransmissora(std::string mensagem);
+void CamadaFisicaTransmissora(std::vector<std::bitset<FRAME_SIZE>> sequenciaQuadros);
 
-const int MAX_SIZE = 512;
+void CamadaFisicaTransmissoraCodificacaoBinaria(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
+void CamadaFisicaTransmissoraCodificacaoManchester(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
+void CamadaFisicaTransmissoraCodificacaoBipolar(std::bitset<FRAME_SIZE> quadro, std::vector<int> &fluxoBrutoDeBits);
 
-std::vector<int> CamadaFisicaTransmissoraCodificacaoBinaria(std::bitset<8*MAX_SIZE> quadro, int size);
-std::vector<int> CamadaFisicaTransmissoraCodificacaoManchester(std::bitset<8*MAX_SIZE> quadro, int size);
-std::vector<int> CamadaFisicaTransmissoraCodificacaoBipolar(std::bitset<8*MAX_SIZE> quadro, int size);
+void MeioDeComunicacao(std::vector<int> sinalEletricoOrigem);
 
-void CamadaFisicaTransmissora(std::bitset<8*MAX_SIZE> quadro, int size);
+void CamadaFisicaReceptora(std::vector<int> sinalEletrico);
 
-void MeioDeComunicacao(std::vector<int> fluxoBrutoDeBits);
-
-std::bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> fluxoBrutoDeBits);
-std::bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> fluxoBrutoDeBits);
-std::bitset<8*MAX_SIZE> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> fluxoBrutoDeBits);
-
-void CamadaFisicaReceptora(std::vector<int> fluxoBrutoDeBits);
-
-void CamadaDeAplicacaoReceptora(std::bitset<8*MAX_SIZE> quadro, int size);
-
-void AplicacaoReceptora(std::string mensagem);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoBinaria(std::vector<int> sinalEletrico);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoManchester(std::vector<int> sinalEletrico);
+std::vector<int> CamadaFisicaTransmissoraDecodificacaoBipolar(std::vector<int> sinalEletrico);
