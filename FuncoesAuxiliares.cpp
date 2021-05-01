@@ -39,24 +39,15 @@ void PrintaVetorBitset(vector<bitset<FRAME_SIZE>> vetor) {
 
 int ContaTamanhoQuadro(std::bitset<FRAME_SIZE> quadro) {
     int tamanho = 0;
-    bitset<FRAME_SIZE> ulong_kernel;
 
-    for (size_t i = 0; i < PACKET_SIZE; i++) ulong_kernel.set(i);
+    for (size_t j = 0; j < FRAME_SIZE/8; j++) {
+        std::bitset<FRAME_SIZE> ch;
+        ch = quadro.to_ulong() & 0xFF;
+        quadro >>= 8;
 
-    for (size_t i = 0; i < FRAME_SIZE/PACKET_SIZE; i++) {
-        bitset<FRAME_SIZE> quadro_ulong;
-        quadro_ulong = quadro & ulong_kernel;
-
-        for (size_t j = 0; j < PACKET_SIZE/8; j++) {
-            std::bitset<FRAME_SIZE> ch;
-            ch = quadro_ulong.to_ulong() & 0xFF;
-            quadro_ulong >>= 8;
-
-            if (ch != '\0') {
-                tamanho++;
-            }
+        if (ch != '\0') {
+            tamanho++;
         }
-        quadro >>= PACKET_SIZE;
     }
 
     return tamanho;
@@ -73,6 +64,16 @@ int ContaTamanhoPacote(std::bitset<PACKET_SIZE> pacote) {
         if (ch != '\0') {
             tamanho++;
         }
+    }
+
+    return tamanho;
+}
+
+int ContaTamanhoBits(std::bitset<FRAME_SIZE> quadro) {
+    int tamanho = 0;
+
+    for (tamanho = FRAME_SIZE-1; tamanho >= 0; tamanho--) {\
+        if (quadro.test(tamanho)) break;
     }
 
     return tamanho;

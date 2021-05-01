@@ -11,3 +11,5 @@ void PrintaVetorBitset(std::vector<std::bitset<FRAME_SIZE>> vetor);
 int ContaTamanhoPacote(std::bitset<PACKET_SIZE> pacote);
 
 int ContaTamanhoQuadro(std::bitset<FRAME_SIZE> quadro);
+
+int ContaTamanhoBits(std::bitset<FRAME_SIZE> quadro);

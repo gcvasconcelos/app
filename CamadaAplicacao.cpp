@@ -49,14 +49,15 @@ void AplicacaoTransmissora() {
 void CamadaDeAplicacaoTransmissora(string mensagem) {
     vector<bitset<PACKET_SIZE>> sequenciaPacotes;
     int flag = 1, indicePacote = 0;
-    int tamanho = mensagem.size();
-    int numPacotes = ceil(tamanho/8.0);
+    int tamanhoMensagem = mensagem.size();
+    int numBytes = PACKET_SIZE/8;
+    int numPacotes = ceil(tamanhoMensagem/((float) numBytes));
 
     for (size_t i = 0; i < numPacotes; i++) {
         bitset<PACKET_SIZE> pacote;
 
-        for (; indicePacote < tamanho; indicePacote++) {
-            if (indicePacote % 8 == 0 && indicePacote >= 8) {
+        for (; indicePacote < tamanhoMensagem; indicePacote++) {
+            if (indicePacote % numBytes == 0 && indicePacote >= numBytes) {
                 if (flag) {
                     flag = 0;
                     break;
@@ -65,7 +66,7 @@ void CamadaDeAplicacaoTransmissora(string mensagem) {
                 }
             }
             pacote <<= 8;
-            pacote |= mensagem[(tamanho-1)-indicePacote];
+            pacote |= mensagem[(tamanhoMensagem-1)-indicePacote]; // TODO
         }
         sequenciaPacotes.push_back(pacote);
     }
@@ -134,6 +135,7 @@ void CamadaDeAplicacaoReceptora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
 void AplicacaoReceptora(vector<bitset<PACKET_SIZE>> sequenciaPacotes) {
     string mensagem = "";
     int numPacotes = sequenciaPacotes.size();
+    int numBytes = PACKET_SIZE/8;
     int indiceByte = 0, flagByte = 1;
 
     for (size_t i = 0; i < numPacotes; i++) {
@@ -142,7 +144,7 @@ void AplicacaoReceptora(vector<bitset<PACKET_SIZE>> sequenciaPacotes) {
         int tamanhoPacote = ContaTamanhoPacote(pacote);
 
         for (; indiceByte < PACKET_SIZE*8; indiceByte++) {
-            if (indiceByte % 8 == 0 && indiceByte >= 8) {
+            if (indiceByte % numBytes == 0 && indiceByte >= numBytes) {
                 if (flagByte) {
                     flagByte = 0;
                     break;
