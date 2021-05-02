@@ -93,7 +93,8 @@ void CamadaFisicaTransmissora(vector<bitset<FRAME_SIZE>> sequenciaQuadros) {
         >> 0 1 1 0 0 0 0 1
  */
 void CamadaFisicaTransmissoraCodificacaoBinaria(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
-    int numBits = ContaTamanhoQuadro(quadro)*8;
+    // int numBits = ContaTamanhoQuadro(quadro)*8;
+    int numBits = FRAME_SIZE;
 
     for (size_t i = 0; i < numBits; i++) {
         int bit = (quadro[i]) ? 1 : 0;
@@ -117,7 +118,8 @@ void CamadaFisicaTransmissoraCodificacaoBinaria(bitset<FRAME_SIZE> quadro, vecto
         >> 0 0 1 1 0 1 0 0
  */
 void CamadaFisicaTransmissoraCodificacaoManchester(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
-    int numBits = ContaTamanhoQuadro(quadro)*8;
+    // int numBits = ContaTamanhoQuadro(quadro)*8;
+    int numBits = FRAME_SIZE;
     bitset<FRAME_SIZE> clock;
 
     for (size_t i = 0; i < numBits; i++) {
@@ -150,7 +152,8 @@ void CamadaFisicaTransmissoraCodificacaoManchester(bitset<FRAME_SIZE> quadro, ve
         >> 0 -1 1 0 0 0 0 -1
  */
 void CamadaFisicaTransmissoraCodificacaoBipolar(bitset<FRAME_SIZE> quadro, vector<int> &fluxoBrutoDeBits) {
-    int numBits = ContaTamanhoQuadro(quadro)*8;
+    // int numBits = ContaTamanhoQuadro(quadro)*8;
+    int numBits = FRAME_SIZE;
     int valor = -1;
 
     for (size_t i = 0; i < numBits; i++) {

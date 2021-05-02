@@ -16,7 +16,12 @@ std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErr
 
 void CamadaEnlaceDadosReceptora(std::vector<int> fluxoBrutoDeBits);
 
-void CamadaEnlaceDadosReceptoraEnquadramento(std::vector<int> fluxoBrutoDeBits, std::vector<std::bitset<FRAME_SIZE>> &sequenciaQuadros);
+std::vector<std::bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramento(std::vector<int> fluxoBrutoDeBits);
 
 std::vector<std::bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCaracteres(std::vector<int> fluxoBrutoDeBits);
 std::vector<std::bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(std::vector<int> fluxoBrutoDeBits);
+
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErro(std::bitset<FRAME_SIZE> quadro);
+
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroBitDeParidadePar(std::bitset<FRAME_SIZE> quadro);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(std::bitset<FRAME_SIZE> quadro);
