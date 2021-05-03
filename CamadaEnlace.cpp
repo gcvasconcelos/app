@@ -154,11 +154,11 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(b
     return quadroControle;
 }
 
+vector<bitset<FRAME_SIZE>> resultadoCRC;
+
 bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(bitset<FRAME_SIZE> quadro) {
     bitset<FRAME_SIZE> polinomioCRC = 0x04C11DB7;
     bitset<FRAME_SIZE> quadroControle(0);
-    int indiceBit;
-    // cout << "\nQUADRO:\t" << quadro << " " << quadro.to_ulong();
 
     bitset<FRAME_SIZE> headerByte = quadro.to_ulong() & 0xFF;
     quadro >>= 8;
@@ -170,22 +170,26 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(
     }
 
     bitset<FRAME_SIZE> quadroOriginal = quadro;
-    // cout << "\nQUADRO:\t" << quadro << " " << quadro.to_ulong();
 
     // verificando qual o indice do bit mais significante para garantir que polinomio divisor termina com bit 1
     int tamanhoPolinomio = ContaTamanhoBits(polinomioCRC);
-    // cout << "\nPOLI:\t" << polinomioCRC << " " << polinomioCRC.to_ulong();
+    int tamanhoQuadro = ContaTamanhoBits(quadro);
 
     // divisão de dois bitsets. Como tamanho é fixo, a cada iteração precisamos fazer a operação de shift no polinomio e depois o XOR. Neste cálculo o quociente é ignorado pois só o resto da divisão é relevante.
-    while ((indiceBit = ContaTamanhoBits(quadro)) >= tamanhoPolinomio) {
-        quadro ^= polinomioCRC << (indiceBit - tamanhoPolinomio);
-    }
+    int indiceBit = tamanhoQuadro - tamanhoPolinomio;
+    int indiceTopBit = tamanhoQuadro - indiceBit;
 
+    for (int i = indiceBit; i >= 0; i--) {
+        bitset<FRAME_SIZE> divisor(0);
+        if (quadro[indiceTopBit+i])
+            divisor = polinomioCRC << i;
+
+        quadro ^= divisor;
+    }
     // o resto é o próprio quadro depois de todos os shifts necessários pra divisão. Esse resto é somado ao quadro
-    // cout << "\nRESTO1:\t" << quadro << " " << quadro.to_ulong();
-    // cout << "\nRESTO2:\t" << quadroOriginal.to_ulong() % polinomioCRC.to_ulong();
-    quadroOriginal = quadroOriginal.to_ulong() + quadro.to_ulong() ;
-    // cout << endl;
+    // quadroOriginal = quadroOriginal.to_ulong() + quadro.to_ulong() ;
+    resultadoCRC.insert(resultadoCRC.begin(), quadro.to_ulong());
+    quadroOriginal = quadroOriginal.to_ulong();
 
     if (tipoEnquadramento == 2){
         quadroControle |= headerByte;
@@ -196,7 +200,7 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(
     quadroControle <<= 8;
     quadroControle |= headerByte;
 
-    // cout << "\nCRC:\t" << quadroControle << " " << quadroControle.to_ulong();
+    cout << "\nCRC:\t" << quadroControle << " " << quadroControle.to_ulong();
 
     return quadroControle;
 }
@@ -227,7 +231,7 @@ void CamadaEnlaceDadosReceptora(vector<int> fluxoBrutoDeBits) {
         PrintaVetorBitset(sequenciaQuadrosDesenquadrados);
     }
 
-    // CamadaDeAplicacaoReceptora(sequenciaQuadrosDesenquadrados);
+    CamadaDeAplicacaoReceptora(sequenciaQuadrosDesenquadrados);
 }
 
 vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramento(vector<int> fluxoBrutoDeBits) {
@@ -295,7 +299,6 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeByte
         int flagQuadro = 0, flagByte = 1;
         int contador = 0;
 
-        cout << "\nDEBUG:\t" << indiceSegundoMarcador[i];
         do {
             byte.reset();
 
@@ -308,6 +311,7 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeByte
             contador++;
 
             // checa se o byte atual é primeiro ou último marcador "\0" para controlar a repetição
+
             if (byte.to_ulong() == 0b00011011) {
                 flagQuadro = (flagQuadro) ? 0 : 1;
             } else {
@@ -326,7 +330,7 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeByte
             }
         } while (flagQuadro);
 
-        int numZeros = FRAME_SIZE - ((contador-2)*9+16);
+        int numZeros = FRAME_SIZE - ((contador-2)*tamanhoByte+16);
         for (size_t j = 0; j < numZeros; j++) fluxoBrutoDeBits.pop_back();
 
         sequenciaQuadros.push_back(quadro);
@@ -392,24 +396,32 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroBitDeParidadePar(bits
 
 bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(bitset<FRAME_SIZE> quadro) {
     bitset<FRAME_SIZE> polinomioCRC = 0x04C11DB7;
-    bitset<FRAME_SIZE> quadroVerificado(0);
-    bitset<FRAME_SIZE> resultado(0);
-    int indiceBit;
+    bitset<FRAME_SIZE> quadroVerificado = quadro;
 
     // verificando qual o indice do bit mais significante para garantir que polinomio divisor termina com bit 1
+    int tamanhoQuadro = ContaTamanhoBits(quadro);
     int tamanhoPolinomio = ContaTamanhoBits(polinomioCRC);
 
     // divisão de dois bitsets. Como tamanho é fixo, a cada iteração precisamos fazer a operação de shift no polinomio e depois o XOR. Neste cálculo o quociente é ignorado pois só o resto da divisão é relevante.
-    while ((indiceBit = ContaTamanhoBits(quadro)) >= tamanhoPolinomio) {
-        resultado.set(indiceBit - tamanhoPolinomio);
-        quadro ^= polinomioCRC << (indiceBit - tamanhoPolinomio);
+    int indiceBit = tamanhoQuadro - tamanhoPolinomio;
+    int indiceTopBit = tamanhoQuadro - indiceBit;
+    // cout << "\nINP\t" << quadro;
+
+    for (int i = indiceBit; i >= 0; i--) {
+        bitset<FRAME_SIZE> divisor(0);
+        if (quadro[indiceTopBit+i])
+            divisor = polinomioCRC << i;
+
+        quadro ^= divisor;
     }
+    // cout << "\nRES\t" << quadro;
+    // cout << "\nRES\t" << resultadoCRC.back();
 
-    cout << "\nDEBUG:\t" << quadro << "\n";
-
-    if (quadro.to_ulong() == 0) {
+    if (quadro.to_ulong() != resultadoCRC.back().to_ulong()) {
+        quadroVerificado.reset();
         cout << "\n\tERRO: Erro detectado na transmissão do bit\n";
     }
+    resultadoCRC.pop_back();
 
     return quadroVerificado;
 }
