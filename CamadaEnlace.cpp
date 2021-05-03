@@ -146,7 +146,6 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(b
         quadroControle |= payload.back();
         payload.pop_back();
     }
-    cout << "\nDEBUG:\t" << quadroControle << "\n";
 
     // insere o marcador ou contador no começo do quadro
     quadroControle <<= 8;
@@ -374,11 +373,10 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroBitDeParidadePar(bits
         // checa se o bit é par e remove o bit de paridade
         } else if (byte.count() % 2 == 0) {
             byte >>= 1;
-            cout << "\nDEBUG:\t" << byte;
             payload.push_back(byte);
         // para a análise quando detecta um erro e zero a saída
         } else {
-            cout << "\n\tERRO: Erro detectado na transmissão do bit\n";
+            cout << "\tERRO: Erro detectado na transmissão do bit\n";
             quadroVerificado = 0;
             flag = 0;
         }
@@ -419,7 +417,7 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(bit
 
     if (quadro.to_ulong() != resultadoCRC.back().to_ulong()) {
         quadroVerificado.reset();
-        cout << "\n\tERRO: Erro detectado na transmissão do bit\n";
+        cout << "\tERRO: Erro detectado na transmissão do bit\n";
     }
     resultadoCRC.pop_back();
 

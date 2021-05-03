@@ -6,7 +6,3 @@ const int PACKET_SIZE = 8*(4);
 const int FRAME_SIZE = 8*(8);
 
 #endif
-
-  // cout << "\nDEBUG:" << tamanho ;
-    // cout << "\nDEBUG:" << numPacotes ;
-    // cout << endl ;

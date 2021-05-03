@@ -183,15 +183,28 @@ void CamadaFisicaTransmissoraCodificacaoBipolar(bitset<FRAME_SIZE> quadro, vecto
 void MeioDeComunicacao(vector<int> sinalEletricoOrigem) {
     int periodo = sinalEletricoOrigem.size();
     vector<int> sinalEletricoDestino(periodo);
+    int porcentagemDeErros = 1;
+    int numErros = 0;
+    int bitNegativo = (tipoCodificacao == 3) ? -1 : 0;
 
-    for (size_t i = 0; i < periodo; i++) {
-        sinalEletricoDestino[i] = sinalEletricoOrigem[i];
-    }
 
     if (LOG_FLAG) {
         cout << "\nLOGS - Meio de Comunicação:\n";
         cout << "\tSinal elétrico enviado:\n\t\t";
         PrintaVetor(sinalEletricoOrigem);
+    }
+
+    for (size_t i = 0; i < periodo; i++) {
+        if (rand()%100 > porcentagemDeErros) {
+            sinalEletricoDestino[i] = sinalEletricoOrigem[i];
+        } else {
+            numErros++;
+            sinalEletricoDestino[i] = (sinalEletricoOrigem[i] == 1) ? bitNegativo : 1;
+        }
+    }
+    cout << "\tNúmero de erros na transmissão: " << numErros << "\n";
+
+    if (LOG_FLAG) {
         cout << "\tSinal elétrico recebido:\n\t\t";
         PrintaVetor(sinalEletricoDestino);
     }
