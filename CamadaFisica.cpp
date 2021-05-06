@@ -183,7 +183,7 @@ void CamadaFisicaTransmissoraCodificacaoBipolar(bitset<FRAME_SIZE> quadro, vecto
 void MeioDeComunicacao(vector<int> sinalEletricoOrigem) {
     int periodo = sinalEletricoOrigem.size();
     vector<int> sinalEletricoDestino(periodo);
-    int porcentagemDeErros = 1;
+    int porcentagemDeErros = -1;
     int numErros = 0;
     int bitNegativo = (tipoCodificacao == 3) ? -1 : 0;
 

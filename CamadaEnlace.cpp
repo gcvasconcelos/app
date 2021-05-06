@@ -89,13 +89,14 @@ bitset<FRAME_SIZE>  CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(bi
     return quadroEnquadrado;
 }
 
-bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErro(bitset<FRAME_SIZE> quadro) {
+bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErro(bitset<FRAME_SIZE> quadroEnquadrado) {
     bitset<FRAME_SIZE> quadroControle;
 
     if (tipoControleDeErro == 0) {
         cout << "\nOpções de tipo de controle de erro na camada de enlace da Aplicação Transmissora:\n";
         cout << "\t1 - Bit de paridade par\n";
         cout << "\t2 - Polinomio CRC-32 (IEEE 802)\n";
+        cout << "\t3 - Código de Hamming\n";
 
         cout << "Escolha um tipo de enquadramento: ";
         cin >> tipoControleDeErro;
@@ -103,10 +104,13 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErro(bitset<FRAME_SIZE
 
     switch (tipoControleDeErro) {
         case 1:
-            quadroControle = CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(quadro);
+            quadroControle = CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(quadroEnquadrado);
             break;
         case 2:
-            quadroControle = CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(quadro);
+            quadroControle = CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(quadroEnquadrado);
+            break;
+        case 3:
+            quadroControle = CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodigoDeHamming(quadroEnquadrado);
             break;
         default:
             cout << "Erro na Camada de Enlace: tipo de codificação não suportado. Encerrando programa." << endl;
@@ -115,14 +119,17 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErro(bitset<FRAME_SIZE
     return quadroControle;
 }
 
-bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(bitset<FRAME_SIZE> quadro) {
+bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(bitset<FRAME_SIZE> quadroEnquadrado) {
     bitset<FRAME_SIZE> quadroControle(0);
-    int numBytes = ContaTamanhoQuadro(quadro);
+    int numBytes = ContaTamanhoQuadro(quadroEnquadrado);
     int indiceByteFinal = (tipoEnquadramento == 1) ? numBytes : numBytes-1 ;
     vector<bitset<FRAME_SIZE>> payload;
 
     // salvando o byte de header (pode ser o contador ou o marcador)
-    bitset<FRAME_SIZE> headerByte = quadro.to_ulong() & 0xFF;
+    bitset<FRAME_SIZE> headerByte = quadroEnquadrado.to_ulong() & 0xFF;
+
+    // salvando o payload extraido do quadro
+    bitset<FRAME_SIZE> quadro = quadroEnquadrado;
 
     // calcula e adiciona bit de paridade para cada byte do payload do quadro
     for (size_t i = 1; i < indiceByteFinal; i++) {
@@ -155,20 +162,22 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(b
 
 vector<bitset<FRAME_SIZE>> resultadoCRC;
 
-bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(bitset<FRAME_SIZE> quadro) {
+bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(bitset<FRAME_SIZE> quadroEnquadrado) {
     bitset<FRAME_SIZE> polinomioCRC = 0x04C11DB7;
     bitset<FRAME_SIZE> quadroControle(0);
 
-    bitset<FRAME_SIZE> headerByte = quadro.to_ulong() & 0xFF;
-    quadro >>= 8;
+    bitset<FRAME_SIZE> headerByte = quadroEnquadrado.to_ulong() & 0xFF;
+    quadroEnquadrado >>= 8;
 
     // caso o header seja enquadrado por inserção de bits, remove o do final para extrair o payload
     if (tipoEnquadramento == 2) {
-        int numBitQuadros = ContaTamanhoQuadro(quadro)*8;
-        for (size_t i = numBitQuadros-8; i < numBitQuadros; i++) quadro.reset(i);
+        int numBitsQuadro = ContaTamanhoQuadro(quadroEnquadrado)*8;
+        for (size_t i = numBitsQuadro-8; i < numBitsQuadro; i++) quadroEnquadrado.reset(i);
     }
 
-    bitset<FRAME_SIZE> quadroOriginal = quadro;
+    // salvando o payload extraido do quadro e salvando quadro original antes da operação de divisão
+    bitset<FRAME_SIZE> quadro = quadroEnquadrado;
+    bitset<FRAME_SIZE> quadroOriginal = quadroEnquadrado;
 
     // verificando qual o indice do bit mais significante para garantir que polinomio divisor termina com bit 1
     int tamanhoPolinomio = ContaTamanhoBits(polinomioCRC);
@@ -204,6 +213,100 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(
     return quadroControle;
 }
 
+bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodigoDeHamming(bitset<FRAME_SIZE> quadroEnquadrado) {
+    bitset<FRAME_SIZE> quadroControle(0);
+    const int  tamanhoDados = 11, tamanhoPalavra = 15;
+    vector<vector<int>> indicesParidade;
+
+    // remove e salva o byte de header
+    bitset<FRAME_SIZE> headerByte = quadroEnquadrado.to_ulong() & 0xFF;
+    quadroEnquadrado >>= 8;
+
+    // caso o header seja enquadrado por inserção de bits, remove o do final para extrair o payload
+    if (tipoEnquadramento == 2) {
+        int numBitsQuadro = ContaTamanhoQuadro(quadroEnquadrado)*8;
+        for (size_t i = numBitsQuadro-8; i < numBitsQuadro; i++) quadroEnquadrado.reset(i);
+    }
+
+    // salvando o payload extraido do quadro
+    bitset<FRAME_SIZE> quadro = quadroEnquadrado;
+
+    // buscando indices para cada bit de paridade que será calculado
+    for (size_t j = 0; j < tamanhoPalavra-tamanhoDados; j++) {
+        vector<int> indices;
+        for (size_t k = 0; k < tamanhoPalavra; k++) {
+            bitset<4> indice = k+1;
+            if (indice[j] && indice.count() > 1) {
+                indices.push_back(k);
+            }
+        }
+        indicesParidade.push_back(indices);
+    }
+
+    // cout << "\nIDX:\n";
+    // for (size_t j = 0; j < indicesParidade.size(); j++){
+    //     for (size_t k = 0; k < indicesParidade[j].size(); k++)
+    //         cout << " " << indicesParidade[j][k]+1;
+    //     cout << "\n";
+    // }
+
+    bitset<FRAME_SIZE> quadroPalavra(0);
+    int numPalavras = ceil((ContaTamanhoQuadro(quadro)*8)/(float) tamanhoDados);
+    for (size_t i = 0; i < numPalavras; i++) {
+        bitset<tamanhoDados> dados = quadro.to_ulong() & 0x7F;
+
+        int indiceDados = 0;
+
+        // cout << "\nDADO:\t" << dados;
+        quadroPalavra <<= tamanhoPalavra;
+        for (size_t j = 0; j < tamanhoPalavra; j++) {
+            bitset<4> indice = j+1;
+
+            // preenche a palavra codigo com os dados
+            if (indice.count() > 1) {
+                quadroPalavra[j] = dados[indiceDados];
+                indiceDados++;
+            }
+        }
+        // cout << "\nPALAV:\t" << quadroPalavra;
+        int indiceBitParidade = 0;
+
+        for (size_t j = 0; j < tamanhoPalavra; j++) {
+            bitset<4> indice = j+1;
+
+            // preenche a palavra codigo com os bits de paridade
+            if (indice.count() == 1) {
+                int contadorBit1 = 0;
+                for (size_t k = 0; k < indicesParidade[indiceBitParidade].size(); k++) {
+                    // cout << "\nB:\t" << indicesParidade[indiceBitParidade][k] << " " << quadroPalavra[indicesParidade[indiceBitParidade][k]];
+                    if (quadroPalavra[indicesParidade[indiceBitParidade][k]]) {
+                        contadorBit1++;
+                    }
+                }
+                // cout << "\nCONT:\t" << j << " " << contadorBit1;
+                indiceBitParidade++;
+                int paridadePar = (contadorBit1 % 2 == 0) ? 0 : 1;
+                // cout << "\nCONT:\t" << j+1 << " " << contadorBit1 << " " << paridadePar;
+                quadroPalavra[j] = paridadePar;
+            }
+        }
+        quadro >>= tamanhoDados;
+    }
+    cout << "\nFINAL:\t" << quadroPalavra;
+
+    if (tipoEnquadramento == 2){
+        quadroControle |= headerByte;
+        quadroControle <<= numPalavras * tamanhoPalavra;
+    }
+
+    quadroControle |= quadroPalavra;
+    quadroControle <<= 8;
+    quadroControle |= headerByte;
+
+    cout << '\n';
+    return quadroControle;
+}
+
 void CamadaEnlaceDadosReceptora(vector<int> fluxoBrutoDeBits) {
     vector<bitset<FRAME_SIZE>> sequenciaQuadros;
     vector<bitset<FRAME_SIZE>> sequenciaQuadrosDesenquadrados;
@@ -230,7 +333,7 @@ void CamadaEnlaceDadosReceptora(vector<int> fluxoBrutoDeBits) {
         PrintaVetorBitset(sequenciaQuadrosDesenquadrados);
     }
 
-    CamadaDeAplicacaoReceptora(sequenciaQuadrosDesenquadrados);
+    // CamadaDeAplicacaoReceptora(sequenciaQuadrosDesenquadrados);
 }
 
 vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramento(vector<int> fluxoBrutoDeBits) {
@@ -265,57 +368,82 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCara
             if (fluxoBrutoDeBits.back()) tamanhoQuadro.set(j);
             fluxoBrutoDeBits.pop_back();
         }
-        // checa se é necessário considerar o bit de paridade
-        int tamanhoByte = (tipoControleDeErro == 1) ? 9 : 8;
+        // checa qual é o tamanho dos dados com controle de erro
+        int tamanhoByte;
+        if (tipoControleDeErro == 1) {
+            tamanhoByte = 9;
+        } else if (tipoControleDeErro == 2) {
+            tamanhoByte = 8;
+        } else if (tipoControleDeErro == 3) {
+            tamanhoByte = 15;
+        } else {
+            tamanhoByte = 0;
+        }
         int numBits = tamanhoQuadro.to_ulong()*tamanhoByte;
+
+        // checa caso especial onde o payload do quadro tem tamanho máximo e tipo de controle é o código de hamming. Nesse caso este mantem o uso de 3 palavras código
+        if (tamanhoQuadro.to_ulong() == 4 && tipoControleDeErro == 3) {
+            numBits = 45;
+        }
         // preenche o quadro com as informações dos próximos bytes enviados
         for (size_t j = 0; j < numBits; j++) {
             if (fluxoBrutoDeBits.back()) quadro.set(j);
             fluxoBrutoDeBits.pop_back();
         }
         int numZeros = FRAME_SIZE - (numBits+8);
+        PrintaVetor(fluxoBrutoDeBits);
         for (size_t j = 0; j < numZeros; j++) fluxoBrutoDeBits.pop_back();
 
         sequenciaQuadros.push_back(quadro);
     }
 
+    cout << "\n";
     return sequenciaQuadros;
 }
 
 vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeBytes(vector<int> fluxoBrutoDeBits) {
     vector<bitset<FRAME_SIZE>> sequenciaQuadros;
-    int numBytes = PACKET_SIZE/8 + 2; // 4 bytes de conteudo + 2 do cabeçalho
     // int numQuadros = ceil((fluxoBrutoDeBits.size()/8)/(float)numBytes);
     int numQuadros = ceil(fluxoBrutoDeBits.size()/ ((float) FRAME_SIZE));
-    int tamanhoByte = (tipoControleDeErro == 1) ? 9 : 8;
-
+    // checa qual é o tamanho dos dados com controle de erro
+    int tamanhoByte;
+    if (tipoControleDeErro == 1) {
+        tamanhoByte = 9;
+    } else if (tipoControleDeErro == 2) {
+        tamanhoByte = 8;
+    } else if (tipoControleDeErro == 3) {
+        tamanhoByte = 15;
+    } else {
+        tamanhoByte = 0;
+    }
 
     for (size_t i = 0; i < numQuadros; i++) {
         bitset<FRAME_SIZE> quadro(0);
         // checa se é necessário considerar o bit de paridade
-        bitset<9> byte(0);
+        bitset<15> byte(0);
         int indiceQuadro = 0;
         int flagQuadro = 0, flagByte = 1;
         int contador = 0;
 
         do {
             byte.reset();
-
+            if (contador == 4 && tipoControleDeErro == 3) {
+                indiceSegundoMarcador[i]--;
+            }
             // busca primeiro byte, que deve ser o marcador "\0"
             int numBits = (contador > 0  && contador < indiceSegundoMarcador[i]) ? tamanhoByte : 8;
             for (size_t j = 0; j < numBits; j++) {
                 if (fluxoBrutoDeBits.back()) byte.set(j);
                 fluxoBrutoDeBits.pop_back();
             }
+
             contador++;
-
             // checa se o byte atual é primeiro ou último marcador "\0" para controlar a repetição
-
             if (byte.to_ulong() == 0b00011011) {
                 flagQuadro = (flagQuadro) ? 0 : 1;
             } else {
                 // preenche o byte no quadro
-                for (size_t j = 0; indiceQuadro < numBytes*tamanhoByte; indiceQuadro++, j++) {
+                for (size_t j = 0; indiceQuadro < FRAME_SIZE; indiceQuadro++, j++) {
                     if (indiceQuadro % tamanhoByte == 0 && indiceQuadro >= tamanhoByte) {
                         if (flagByte) {
                             flagByte = 0;
@@ -328,13 +456,21 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeByte
                 }
             }
         } while (flagQuadro);
+        // cout << "\nagoravai\n";
+        // PrintaVetor(fluxoBrutoDeBits);
 
-        int numZeros = FRAME_SIZE - ((contador-2)*tamanhoByte+16);
+        int numBits = ((contador-2)*tamanhoByte+16);
+        // checa caso especial onde o payload do quadro tem tamanho máximo e tipo de controle é o código de hamming. Nesse caso este mantem o uso de 3 palavras código
+        if (numBits > FRAME_SIZE && tipoControleDeErro == 3) {
+            numBits = 61;
+        }
+        // cout << "\nDEBUG:\t" << numBits;
+        int numZeros = FRAME_SIZE - numBits;
+
         for (size_t j = 0; j < numZeros; j++) fluxoBrutoDeBits.pop_back();
 
         sequenciaQuadros.push_back(quadro);
     }
-
     return sequenciaQuadros;
 }
 
@@ -347,6 +483,9 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErro(bitset<FRAME_SIZE> q
             break;
         case 2:
             quadroVerificado = CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(quadro);
+            break;
+        case 3:
+            quadroVerificado = CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCodigoDeHamming(quadro);
             break;
         default:
             cout << "Erro na Camada de Enlace: tipo de codificação não suportado. Encerrando programa." << endl;
@@ -420,6 +559,15 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(bit
         cout << "\tERRO: Erro detectado na transmissão do bit\n";
     }
     resultadoCRC.pop_back();
+
+    return quadroVerificado;
+}
+
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCodigoDeHamming(std::bitset<FRAME_SIZE> quadro) {
+    bitset<FRAME_SIZE> quadroVerificado = quadro;
+
+
+
 
     return quadroVerificado;
 }

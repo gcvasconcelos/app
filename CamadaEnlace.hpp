@@ -6,13 +6,14 @@ void CamadaEnlaceDadosTransmissora(std::vector<std::bitset<PACKET_SIZE>> sequenc
 
 std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraEnquadramento(std::bitset<FRAME_SIZE> quadro);
 
-std::bitset<FRAME_SIZE>CamadaEnlaceDadosTransmissoraEnquadramentoContagemDeCaracteres(std::bitset<FRAME_SIZE> quadro);
-std::bitset<FRAME_SIZE>CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(std::bitset<FRAME_SIZE> quadro);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraEnquadramentoContagemDeCaracteres(std::bitset<FRAME_SIZE> quadro);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraEnquadramentoInsercaoDeBytes(std::bitset<FRAME_SIZE> quadro);
 
-std::bitset<FRAME_SIZE>  CamadaEnlaceDadosTransmissoraControleDeErro(std::bitset<FRAME_SIZE> quadro);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErro(std::bitset<FRAME_SIZE> quadroEnquadrado);
 
-std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(std::bitset<FRAME_SIZE> quadro);
-std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(std::bitset<FRAME_SIZE> quadro);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroBitDeParidadePar(std::bitset<FRAME_SIZE> quadroEnquadrado);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(std::bitset<FRAME_SIZE> quadroEnquadrado);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodigoDeHamming(std::bitset<FRAME_SIZE> quadroEnquadrado);
 
 void CamadaEnlaceDadosReceptora(std::vector<int> fluxoBrutoDeBits);
 
@@ -25,3 +26,4 @@ std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErro(std::bitset<FRA
 
 std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroBitDeParidadePar(std::bitset<FRAME_SIZE> quadro);
 std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(std::bitset<FRAME_SIZE> quadro);
+std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCodigoDeHamming(std::bitset<FRAME_SIZE> quadro);
