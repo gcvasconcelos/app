@@ -208,15 +208,14 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCRC(
     quadroControle <<= 8;
     quadroControle |= headerByte;
 
-    cout << "\nCRC:\t" << quadroControle << " " << quadroControle.to_ulong();
-
     return quadroControle;
 }
 
+const int  tamanhoDados = 11, tamanhoPalavra = 15;
+vector<vector<int>> indicesParidade;
+
 bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodigoDeHamming(bitset<FRAME_SIZE> quadroEnquadrado) {
     bitset<FRAME_SIZE> quadroControle(0);
-    const int  tamanhoDados = 11, tamanhoPalavra = 15;
-    vector<vector<int>> indicesParidade;
 
     // remove e salva o byte de header
     bitset<FRAME_SIZE> headerByte = quadroEnquadrado.to_ulong() & 0xFF;
@@ -236,28 +235,20 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodi
         vector<int> indices;
         for (size_t k = 0; k < tamanhoPalavra; k++) {
             bitset<4> indice = k+1;
-            if (indice[j] && indice.count() > 1) {
+            if (indice[j]) {
                 indices.push_back(k);
             }
         }
         indicesParidade.push_back(indices);
     }
 
-    // cout << "\nIDX:\n";
-    // for (size_t j = 0; j < indicesParidade.size(); j++){
-    //     for (size_t k = 0; k < indicesParidade[j].size(); k++)
-    //         cout << " " << indicesParidade[j][k]+1;
-    //     cout << "\n";
-    // }
-
     bitset<FRAME_SIZE> quadroPalavra(0);
     int numPalavras = ceil((ContaTamanhoQuadro(quadro)*8)/(float) tamanhoDados);
     for (size_t i = 0; i < numPalavras; i++) {
-        bitset<tamanhoDados> dados = quadro.to_ulong() & 0x7F;
+        bitset<tamanhoDados> dados = quadro.to_ulong() & 0x7FF;
 
         int indiceDados = 0;
 
-        // cout << "\nDADO:\t" << dados;
         quadroPalavra <<= tamanhoPalavra;
         for (size_t j = 0; j < tamanhoPalavra; j++) {
             bitset<4> indice = j+1;
@@ -268,7 +259,6 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodi
                 indiceDados++;
             }
         }
-        // cout << "\nPALAV:\t" << quadroPalavra;
         int indiceBitParidade = 0;
 
         for (size_t j = 0; j < tamanhoPalavra; j++) {
@@ -277,22 +267,19 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodi
             // preenche a palavra codigo com os bits de paridade
             if (indice.count() == 1) {
                 int contadorBit1 = 0;
-                for (size_t k = 0; k < indicesParidade[indiceBitParidade].size(); k++) {
-                    // cout << "\nB:\t" << indicesParidade[indiceBitParidade][k] << " " << quadroPalavra[indicesParidade[indiceBitParidade][k]];
+                // o loop começa do segundo indice pois não leva em conta o bit de paridade, que esta sendo calculado
+                for (size_t k = 1; k < indicesParidade[indiceBitParidade].size(); k++) {
                     if (quadroPalavra[indicesParidade[indiceBitParidade][k]]) {
                         contadorBit1++;
                     }
                 }
-                // cout << "\nCONT:\t" << j << " " << contadorBit1;
                 indiceBitParidade++;
                 int paridadePar = (contadorBit1 % 2 == 0) ? 0 : 1;
-                // cout << "\nCONT:\t" << j+1 << " " << contadorBit1 << " " << paridadePar;
                 quadroPalavra[j] = paridadePar;
             }
         }
         quadro >>= tamanhoDados;
     }
-    cout << "\nFINAL:\t" << quadroPalavra;
 
     if (tipoEnquadramento == 2){
         quadroControle |= headerByte;
@@ -303,14 +290,12 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosTransmissoraControleDeErroControleDeErroCodi
     quadroControle <<= 8;
     quadroControle |= headerByte;
 
-    cout << '\n';
     return quadroControle;
 }
 
 void CamadaEnlaceDadosReceptora(vector<int> fluxoBrutoDeBits) {
     vector<bitset<FRAME_SIZE>> sequenciaQuadros;
     vector<bitset<FRAME_SIZE>> sequenciaQuadrosDesenquadrados;
-
 
     if (LOG_FLAG) {
         cout << "\nLOGS - DECODE Camada de Enlace:\n";
@@ -333,7 +318,7 @@ void CamadaEnlaceDadosReceptora(vector<int> fluxoBrutoDeBits) {
         PrintaVetorBitset(sequenciaQuadrosDesenquadrados);
     }
 
-    // CamadaDeAplicacaoReceptora(sequenciaQuadrosDesenquadrados);
+    CamadaDeAplicacaoReceptora(sequenciaQuadrosDesenquadrados);
 }
 
 vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramento(vector<int> fluxoBrutoDeBits) {
@@ -391,13 +376,10 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoContagemDeCara
             fluxoBrutoDeBits.pop_back();
         }
         int numZeros = FRAME_SIZE - (numBits+8);
-        PrintaVetor(fluxoBrutoDeBits);
         for (size_t j = 0; j < numZeros; j++) fluxoBrutoDeBits.pop_back();
 
         sequenciaQuadros.push_back(quadro);
     }
-
-    cout << "\n";
     return sequenciaQuadros;
 }
 
@@ -456,15 +438,12 @@ vector<bitset<FRAME_SIZE>> CamadaEnlaceDadosReceptoraEnquadramentoInsercaoDeByte
                 }
             }
         } while (flagQuadro);
-        // cout << "\nagoravai\n";
-        // PrintaVetor(fluxoBrutoDeBits);
 
         int numBits = ((contador-2)*tamanhoByte+16);
         // checa caso especial onde o payload do quadro tem tamanho máximo e tipo de controle é o código de hamming. Nesse caso este mantem o uso de 3 palavras código
         if (numBits > FRAME_SIZE && tipoControleDeErro == 3) {
             numBits = 61;
         }
-        // cout << "\nDEBUG:\t" << numBits;
         int numZeros = FRAME_SIZE - numBits;
 
         for (size_t j = 0; j < numZeros; j++) fluxoBrutoDeBits.pop_back();
@@ -542,7 +521,6 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(bit
     // divisão de dois bitsets. Como tamanho é fixo, a cada iteração precisamos fazer a operação de shift no polinomio e depois o XOR. Neste cálculo o quociente é ignorado pois só o resto da divisão é relevante.
     int indiceBit = tamanhoQuadro - tamanhoPolinomio;
     int indiceTopBit = tamanhoQuadro - indiceBit;
-    // cout << "\nINP\t" << quadro;
 
     for (int i = indiceBit; i >= 0; i--) {
         bitset<FRAME_SIZE> divisor(0);
@@ -551,8 +529,6 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(bit
 
         quadro ^= divisor;
     }
-    // cout << "\nRES\t" << quadro;
-    // cout << "\nRES\t" << resultadoCRC.back();
 
     if (quadro.to_ulong() != resultadoCRC.back().to_ulong()) {
         quadroVerificado.reset();
@@ -564,10 +540,49 @@ bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCRC(bit
 }
 
 std::bitset<FRAME_SIZE> CamadaEnlaceDadosReceptoraControleDeErroControleDeErroCodigoDeHamming(std::bitset<FRAME_SIZE> quadro) {
-    bitset<FRAME_SIZE> quadroVerificado = quadro;
+    bitset<FRAME_SIZE> quadroVerificado(0);
+    int numPalavras = ceil(ContaTamanhoBits(quadro)/(float) tamanhoPalavra);
 
+    for (size_t i = 0; i < numPalavras; i++) {
+        bitset<tamanhoPalavra> palavra = quadro.to_ulong() & 0x7FFF;
+        bitset<tamanhoPalavra-tamanhoDados> paridade;
+        int indiceBitParidade = 0, indiceQuadro = 0;
 
+        quadroVerificado <<= tamanhoDados;
+        for (size_t j = 0; j < tamanhoPalavra; j++) {
+            bitset<4> indice = j+1;
+            int contadorBit1 = 0;
 
+            if (indice.count() == 1) {
+                // o loop começa do segundo indice pois não leva em conta o bit de paridade, que esta sendo calculado
+                for (size_t k = 0; k < indicesParidade[indiceBitParidade].size(); k++) {
+                    if (palavra[indicesParidade[indiceBitParidade][k]]) {
+                        contadorBit1++;
+                    }
+                }
 
+                paridade[indiceBitParidade] = (contadorBit1 % 2 == 0) ? 0 : 1;
+                indiceBitParidade++;
+            }
+        }
+
+        if (paridade.to_ulong() != 0) {
+            int indiceErro = (paridade.to_ulong()-1) + i*15;
+            cout << "\n\tERRO: Erro detectado na transmissão do bit " << indiceErro << " do quadro. Corrigindo bit.";
+
+            palavra.flip(paridade.to_ulong()-1);
+        }
+
+        for (size_t j = 0; j < tamanhoPalavra; j++) {
+            bitset<4> indice = j+1;
+
+            if (indice.count() > 1) {
+                quadroVerificado[indiceQuadro] = palavra[j];
+                indiceQuadro++;
+            }
+        }
+
+        quadro >>= tamanhoPalavra;
+    }
     return quadroVerificado;
 }
